@@ -1,0 +1,69 @@
+# React Native
+node_modules/
+.eslintcache
+
+# Build folders
+build/
+dist/
+.gradle/
+.m2/
+
+# iOS
+ios/Pods/
+ios/Podfile.lock
+ios/build/
+*.pbxuser
+*.mode1v3
+*.mode2v3
+*.perspectivev3
+*.xcworkspace/xcuserdata
+DerivedData/
+*.hmap
+*.ipa
+*.xcarchive
+.DS_Store
+
+# Android
+android/app/debug/
+android/app/release/
+*.apk
+*.aab
+
+# Env
+.env
+.env.local
+.env.*.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Metro
+.metro-health-check-result.json
+
+# Temp
+*.log
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Testing
+coverage/
+.nyc_output/
+
+# Misc
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+*.orig.*
+*.cer

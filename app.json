@@ -1,0 +1,8 @@
+{
+  "name": "ChessMatchingApp",
+  "displayName": "Chess Matching",
+  "description": "Find and play chess with nearby players",
+  "version": "0.0.1",
+  "private": true,
+  "main": "index.js"
+}
