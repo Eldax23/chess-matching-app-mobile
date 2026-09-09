@@ -1,10 +1,10 @@
 import Geolocation from '@react-native-community/geolocation';
-import { Location } from '@types/index';
+import { Location } from '@/types';
 
 // Request permissions (iOS specific)
 export const requestLocationPermission = async (): Promise<boolean> => {
   try {
-    return new Promise((resolve, reject) => {
+    return new Promise(resolve => {
       Geolocation.requestAuthorization(
         () => {
           // Permission granted

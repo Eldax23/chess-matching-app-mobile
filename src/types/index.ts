@@ -266,7 +266,7 @@ export type HomeStackParamList = {
 export type ProposalsStackParamList = {
   ProposalsList: undefined;
   ProposalDetail: { proposalId: string };
-  RecordMatch: { matchId: string };
+  RecordMatch: { matchId: string; opponentId: string; opponentUsername: string };
 };
 
 export type ProfileStackParamList = {

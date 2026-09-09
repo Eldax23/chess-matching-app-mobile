@@ -7,7 +7,7 @@ import {
   LoginRequest,
   RegisterRequest,
   AuthState,
-} from '@types/index';
+} from '@/types';
 
 export const useAuthStore = create<
   AuthState & {

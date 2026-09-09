@@ -8,7 +8,7 @@ import {
   SetAvailabilityRequest,
   CreateProposalRequest,
   CreateMatchRequest,
-} from '@types/index';
+} from '@/types';
 
 const BASE_URL = 'https://api.chess-matching-app.com'; // Update with your API URL
 

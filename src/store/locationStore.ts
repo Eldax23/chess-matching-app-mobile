@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { apiClient } from '@services/api';
-import { Location, LocationState, NearbyUser } from '@types/index';
+import { Location, LocationState, NearbyUser } from '@/types';
 
 export const useLocationStore = create<
   LocationState & {
@@ -22,7 +22,7 @@ export const useLocationStore = create<
   setAvailability: async (location, hasBoard, expiresInHours = 4) => {
     set({ isLoading: true, error: null });
     try {
-      const response = await apiClient.setAvailability({
+      await apiClient.setAvailability({
         isAvailable: true,
         latitude: location.latitude,
         longitude: location.longitude,

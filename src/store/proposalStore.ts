@@ -1,18 +1,18 @@
 import { create } from 'zustand';
 import { apiClient } from '@services/api';
-import { Proposal, ProposalState, CreateProposalRequest } from '@types/index';
+import { ProposalState, CreateProposalRequest } from '@/types';
 
 export const useProposalStore = create<
   ProposalState & {
     createProposal: (data: CreateProposalRequest) => Promise<string>;
     fetchIncomingProposals: () => Promise<void>;
     fetchOutgoingProposals: () => Promise<void>;
-    acceptProposal: (proposalId: string) => Promise<void>;
+    acceptProposal: (proposalId: string) => Promise<import('@/types').AcceptProposalResponse>;
     rejectProposal: (proposalId: string, reason?: string) => Promise<void>;
     cancelProposal: (proposalId: string) => Promise<void>;
     clearError: () => void;
   }
->(set, get => ({
+>((set, get) => ({
   incomingProposals: [],
   outgoingProposals: [],
   isLoading: false,
@@ -83,7 +83,7 @@ export const useProposalStore = create<
   acceptProposal: async proposalId => {
     set({ isLoading: true, error: null });
     try {
-      await apiClient.acceptProposal(proposalId);
+      const response = await apiClient.acceptProposal(proposalId);
 
       // Remove from incoming
       const incoming = get().incomingProposals;
@@ -91,6 +91,8 @@ export const useProposalStore = create<
         incomingProposals: incoming.filter(p => p.id !== proposalId),
         isLoading: false,
       });
+
+      return response;
     } catch (error: any) {
       const message = error.response?.data?.message || 'Failed to accept proposal';
       set({ error: message, isLoading: false });
