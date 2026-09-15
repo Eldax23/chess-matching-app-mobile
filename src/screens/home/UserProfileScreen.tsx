@@ -112,7 +112,7 @@ export default function UserProfileScreen({ route, navigation }: Props) {
               <Text style={styles.statLabel}>Losses</Text>
             </View>
             <View style={styles.statItem}>
-              <Text style={styles.statValue}>{Math.round(stats.winRate * 100)}%</Text>
+              <Text style={styles.statValue}>{stats.winRate}%</Text>
               <Text style={styles.statLabel}>Win rate</Text>
             </View>
           </View>
