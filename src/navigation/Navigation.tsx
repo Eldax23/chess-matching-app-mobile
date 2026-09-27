@@ -1,10 +1,11 @@
 import React, { useEffect } from 'react';
-import { NavigationContainer } from '@react-navigation/native';
+import { NavigationContainer, DarkTheme, Theme } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import Icon from 'react-native-vector-icons/MaterialIcons';
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 
 import { useAuthStore } from '@/store/authStore';
+import { useProposalStore } from '@/store/proposalStore';
 import {
   RootStackParamList,
   AuthStackParamList,
@@ -14,7 +15,7 @@ import {
   ProfileStackParamList,
   SettingsStackParamList,
 } from '@/types';
-import { colors } from '@/theme';
+import { colors, fonts } from '@/theme';
 import { LoadingSpinner } from '@/components';
 
 // Auth screens
@@ -49,11 +50,35 @@ const ProposalsStack = createNativeStackNavigator<ProposalsStackParamList>();
 const ProfileStack = createNativeStackNavigator<ProfileStackParamList>();
 const SettingsStack = createNativeStackNavigator<SettingsStackParamList>();
 
+const navTheme: Theme = {
+  ...DarkTheme,
+  colors: {
+    ...DarkTheme.colors,
+    primary: colors.primary,
+    background: colors.background,
+    card: colors.background,
+    text: colors.textPrimary,
+    border: colors.borderLight,
+    notification: colors.primary,
+  },
+};
+
 const screenOptions = {
   headerTintColor: colors.textPrimary,
-  headerStyle: { backgroundColor: colors.surface },
+  headerStyle: { backgroundColor: colors.background },
   headerShadowVisible: false,
-  headerTitleStyle: { fontWeight: '700' as const },
+  headerTitleStyle: { fontWeight: '800' as const },
+  contentStyle: { backgroundColor: colors.background },
+};
+
+// Main screens render their own branded AppHeader
+const noHeader = { headerShown: false };
+
+const TAB_ICONS: Record<keyof AppTabParamList, string> = {
+  HomeStack: 'radar',
+  ProposalsStack: 'sword-cross',
+  ProfileStack: 'account-circle-outline',
+  SettingsStack: 'cog-outline',
 };
 
 const AuthStackNavigator = () => (
@@ -65,7 +90,7 @@ const AuthStackNavigator = () => (
 
 const HomeStackNavigator = () => (
   <HomeStack.Navigator screenOptions={screenOptions}>
-    <HomeStack.Screen name="Map" component={MapScreen} options={{ headerTitle: 'Find Players' }} />
+    <HomeStack.Screen name="Map" component={MapScreen} options={noHeader} />
     <HomeStack.Screen
       name="UserProfile"
       component={UserProfileScreen}
@@ -74,7 +99,7 @@ const HomeStackNavigator = () => (
     <HomeStack.Screen
       name="SetAvailability"
       component={SetAvailabilityScreen}
-      options={{ headerTitle: 'Set Availability' }}
+      options={noHeader}
     />
   </HomeStack.Navigator>
 );
@@ -84,7 +109,7 @@ const ProposalsStackNavigator = () => (
     <ProposalsStack.Screen
       name="ProposalsList"
       component={ProposalsListScreen}
-      options={{ headerTitle: 'Match Requests' }}
+      options={noHeader}
     />
     <ProposalsStack.Screen
       name="ProposalDetail"
@@ -101,7 +126,7 @@ const ProposalsStackNavigator = () => (
 
 const ProfileStackNavigator = () => (
   <ProfileStack.Navigator screenOptions={screenOptions}>
-    <ProfileStack.Screen name="Profile" component={ProfileScreen} options={{ headerTitle: 'Profile' }} />
+    <ProfileStack.Screen name="Profile" component={ProfileScreen} options={noHeader} />
     <ProfileStack.Screen
       name="EditProfile"
       component={EditProfileScreen}
@@ -120,7 +145,7 @@ const SettingsStackNavigator = () => (
     <SettingsStack.Screen
       name="Settings"
       component={SettingsScreen}
-      options={{ headerTitle: 'Settings' }}
+      options={noHeader}
     />
     <SettingsStack.Screen
       name="BlockList"
@@ -131,36 +156,70 @@ const SettingsStackNavigator = () => (
   </SettingsStack.Navigator>
 );
 
-const AppTabNavigator = () => (
-  <AppTabs.Navigator
-    screenOptions={({ route }: { route: { name: keyof AppTabParamList } }) => ({
-      headerShown: false,
-      tabBarIcon: ({ color, size }: { color: string; size: number }) => {
-        let iconName = 'help';
-        if (route.name === 'HomeStack') iconName = 'map';
-        else if (route.name === 'ProposalsStack') iconName = 'mail';
-        else if (route.name === 'ProfileStack') iconName = 'person';
-        else if (route.name === 'SettingsStack') iconName = 'settings';
-        return <Icon name={iconName} size={size} color={color} />;
-      },
-      tabBarActiveTintColor: colors.primary,
-      tabBarInactiveTintColor: colors.textTertiary,
-      tabBarLabelStyle: { fontSize: 12, fontWeight: '500' as const },
-    })}>
-    <AppTabs.Screen name="HomeStack" component={HomeStackNavigator} options={{ tabBarLabel: 'Find Players' }} />
-    <AppTabs.Screen
-      name="ProposalsStack"
-      component={ProposalsStackNavigator}
-      options={{ tabBarLabel: 'Requests' }}
-    />
-    <AppTabs.Screen name="ProfileStack" component={ProfileStackNavigator} options={{ tabBarLabel: 'Profile' }} />
-    <AppTabs.Screen
-      name="SettingsStack"
-      component={SettingsStackNavigator}
-      options={{ tabBarLabel: 'Settings' }}
-    />
-  </AppTabs.Navigator>
-);
+const AppTabNavigator = () => {
+  const incomingCount = useProposalStore(s => s.incomingProposals.length);
+  const fetchIncomingProposals = useProposalStore(s => s.fetchIncomingProposals);
+
+  // Load incoming requests up front so the Challenges badge is accurate
+  useEffect(() => {
+    fetchIncomingProposals().catch(() => {});
+  }, [fetchIncomingProposals]);
+
+  return (
+    <AppTabs.Navigator
+      screenOptions={({ route }: { route: { name: keyof AppTabParamList } }) => ({
+        headerShown: false,
+        tabBarIcon: ({ color, focused }: { color: string; focused: boolean }) => (
+          <Icon name={TAB_ICONS[route.name]} size={focused ? 26 : 24} color={color} />
+        ),
+        tabBarActiveTintColor: colors.primary,
+        tabBarInactiveTintColor: colors.textTertiary,
+        tabBarStyle: {
+          backgroundColor: colors.surface,
+          borderTopColor: colors.borderLight,
+          height: 68,
+          paddingTop: 8,
+          paddingBottom: 10,
+        },
+        tabBarLabelStyle: {
+          fontFamily: fonts.mono,
+          fontSize: 10,
+          fontWeight: '700' as const,
+          letterSpacing: 0.8,
+        },
+        tabBarBadgeStyle: {
+          backgroundColor: colors.secondary,
+          color: colors.textInverse,
+          fontSize: 10,
+          fontWeight: '800' as const,
+        },
+      })}>
+      <AppTabs.Screen
+        name="HomeStack"
+        component={HomeStackNavigator}
+        options={{ tabBarLabel: 'RADAR' }}
+      />
+      <AppTabs.Screen
+        name="ProposalsStack"
+        component={ProposalsStackNavigator}
+        options={{
+          tabBarLabel: 'CHALLENGES',
+          tabBarBadge: incomingCount > 0 ? incomingCount : undefined,
+        }}
+      />
+      <AppTabs.Screen
+        name="ProfileStack"
+        component={ProfileStackNavigator}
+        options={{ tabBarLabel: 'PROFILE' }}
+      />
+      <AppTabs.Screen
+        name="SettingsStack"
+        component={SettingsStackNavigator}
+        options={{ tabBarLabel: 'SETTINGS' }}
+      />
+    </AppTabs.Navigator>
+  );
+};
 
 export const Navigation = () => {
   const { user, isLoading, restoreToken } = useAuthStore();
@@ -174,7 +233,7 @@ export const Navigation = () => {
   }
 
   return (
-    <NavigationContainer>
+    <NavigationContainer theme={navTheme}>
       <RootStack.Navigator screenOptions={{ headerShown: false }}>
         {user ? (
           <RootStack.Screen name="App" component={AppTabNavigator} />

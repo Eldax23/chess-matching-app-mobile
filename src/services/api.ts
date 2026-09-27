@@ -97,8 +97,8 @@ class ApiClient {
     return response.data;
   }
 
-  async logout(): Promise<void> {
-    await this.instance.post('/api/v1/auth/logout');
+  async logout(refreshToken: string): Promise<void> {
+    await this.instance.post('/api/v1/auth/logout', { refreshToken });
   }
 
   // ===== PROFILE ENDPOINTS =====

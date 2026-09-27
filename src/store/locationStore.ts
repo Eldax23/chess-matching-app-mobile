@@ -11,6 +11,8 @@ export const useLocationStore = create<
     ) => Promise<void>;
     setUnavailable: () => Promise<void>;
     getNearbyUsers: (radiusKm: number, hasBoard?: boolean) => Promise<NearbyUser[]>;
+    searchRadiusKm: number;
+    setSearchRadius: (radiusKm: number) => void;
     clearError: () => void;
   }
 >(set => ({
@@ -18,6 +20,11 @@ export const useLocationStore = create<
   isAvailable: false,
   isLoading: false,
   error: null,
+  searchRadiusKm: 10,
+
+  setSearchRadius: radiusKm => {
+    set({ searchRadiusKm: radiusKm });
+  },
 
   setAvailability: async (location, hasBoard, expiresInHours = 4) => {
     set({ isLoading: true, error: null });

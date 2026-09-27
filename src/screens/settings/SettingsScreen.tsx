@@ -1,16 +1,24 @@
 import React from 'react';
-import { Text, StyleSheet, TouchableOpacity, ScrollView, Alert } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import Icon from 'react-native-vector-icons/MaterialIcons';
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { SettingsStackParamList } from '@/types';
 import { useAuthStore } from '@/store/authStore';
-import { Card } from '@/components';
+import { AppHeader, Button, Card, IconTile, SectionHeader } from '@/components';
 import { colors, spacing, typography } from '@/theme';
 
 type Props = NativeStackScreenProps<SettingsStackParamList, 'Settings'>;
 
+interface Row {
+  icon: string;
+  color: string;
+  label: string;
+  sub: string;
+  onPress: () => void;
+}
+
 export default function SettingsScreen({ navigation }: Props) {
-  const { logout } = useAuthStore();
+  const { logout, user } = useAuthStore();
 
   const handleLogout = () => {
     Alert.alert('Log out', 'Are you sure you want to log out?', [
@@ -19,62 +27,121 @@ export default function SettingsScreen({ navigation }: Props) {
     ]);
   };
 
-  const items: { icon: string; label: string; onPress: () => void; danger?: boolean }[] = [
+  const toProfile = (screen: 'EditProfile' | 'MatchHistory') =>
+    navigation.getParent()?.navigate('ProfileStack', { screen, initial: false });
+
+  const sections: { title: string; icon: string; color: string; rows: Row[] }[] = [
     {
-      icon: 'block',
-      label: 'Blocked players',
-      onPress: () => navigation.navigate('BlockList'),
+      title: 'Account',
+      icon: 'account-cog-outline',
+      color: colors.primary,
+      rows: [
+        {
+          icon: 'account-edit-outline',
+          color: colors.primary,
+          label: 'Edit profile',
+          sub: 'Name, bio, board & linked ratings',
+          onPress: () => toProfile('EditProfile'),
+        },
+        {
+          icon: 'history',
+          color: colors.warning,
+          label: 'Match history',
+          sub: 'Every over-the-board duel you recorded',
+          onPress: () => toProfile('MatchHistory'),
+        },
+      ],
     },
     {
-      icon: 'info-outline',
-      label: 'About',
-      onPress: () => navigation.navigate('About'),
+      title: 'Safety & Privacy',
+      icon: 'shield-lock-outline',
+      color: colors.secondary,
+      rows: [
+        {
+          icon: 'account-cancel-outline',
+          color: colors.danger,
+          label: 'Blocked players',
+          sub: 'Players who can’t see or challenge you',
+          onPress: () => navigation.navigate('BlockList'),
+        },
+      ],
     },
     {
-      icon: 'logout',
-      label: 'Log out',
-      onPress: handleLogout,
-      danger: true,
+      title: 'App',
+      icon: 'chess-knight',
+      color: colors.warning,
+      rows: [
+        {
+          icon: 'information-outline',
+          color: colors.secondary,
+          label: 'About',
+          sub: 'Version, terms & credits',
+          onPress: () => navigation.navigate('About'),
+        },
+      ],
     },
   ];
 
   return (
-    <ScrollView style={styles.flex} contentContainerStyle={styles.container}>
-      <Card padded={false}>
-        {items.map((item, index) => (
-          <TouchableOpacity
-            key={item.label}
-            style={[styles.row, index < items.length - 1 && styles.rowBorder]}
-            onPress={item.onPress}>
-            <Icon
-              name={item.icon}
-              size={20}
-              color={item.danger ? colors.danger : colors.textPrimary}
-            />
-            <Text style={[styles.rowLabel, item.danger && styles.rowLabelDanger]}>
-              {item.label}
-            </Text>
-            <Icon name="chevron-right" size={20} color={colors.textTertiary} />
-          </TouchableOpacity>
+    <View style={styles.flex}>
+      <AppHeader subtitle="Settings" />
+      <ScrollView contentContainerStyle={styles.container}>
+        {sections.map(section => (
+          <View key={section.title} style={styles.section}>
+            <SectionHeader title={section.title} icon={section.icon} color={section.color} />
+            <Card padded={false}>
+              {section.rows.map((row, index) => (
+                <TouchableOpacity
+                  key={row.label}
+                  activeOpacity={0.8}
+                  style={[styles.row, index < section.rows.length - 1 && styles.rowBorder]}
+                  onPress={row.onPress}>
+                  <IconTile icon={row.icon} color={row.color} size={40} />
+                  <View style={styles.rowText}>
+                    <Text style={styles.rowLabel}>{row.label}</Text>
+                    <Text style={styles.rowSub}>{row.sub}</Text>
+                  </View>
+                  <Icon name="chevron-right" size={20} color={colors.textTertiary} />
+                </TouchableOpacity>
+              ))}
+            </Card>
+          </View>
         ))}
-      </Card>
-    </ScrollView>
+
+        <Button
+          title="Log out"
+          icon="logout"
+          variant="dark"
+          onPress={handleLogout}
+          style={styles.logout}
+        />
+        {user && <Text style={styles.signedIn}>Signed in as {user.email}</Text>}
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   flex: { flex: 1, backgroundColor: colors.background },
-  container: { padding: spacing.lg },
+  container: { paddingHorizontal: spacing.md, paddingBottom: spacing.xl },
+  section: { marginBottom: spacing.lg },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.md,
+    padding: spacing.md,
   },
   rowBorder: {
     borderBottomWidth: 1,
     borderBottomColor: colors.borderLight,
   },
-  rowLabel: { ...typography.body, color: colors.textPrimary, flex: 1, marginLeft: spacing.md },
-  rowLabelDanger: { color: colors.danger },
+  rowText: { flex: 1, marginLeft: spacing.sm + 4 },
+  rowLabel: { ...typography.bodyBold, fontWeight: '800', color: colors.textPrimary },
+  rowSub: { ...typography.small, color: colors.textSecondary, marginTop: 2 },
+  logout: { marginTop: spacing.sm },
+  signedIn: {
+    ...typography.small,
+    color: colors.textTertiary,
+    textAlign: 'center',
+    marginTop: spacing.md,
+  },
 });

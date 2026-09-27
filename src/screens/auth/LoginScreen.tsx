@@ -11,7 +11,7 @@ import {
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { AuthStackParamList } from '@/types';
 import { useAuthStore } from '@/store/authStore';
-import { Button, Input } from '@/components';
+import { Button, Input, BrandMark } from '@/components';
 import { colors, spacing, typography } from '@/theme';
 import { validationUtils } from '@/utils';
 
@@ -46,7 +46,7 @@ export default function LoginScreen({ navigation }: Props) {
         contentContainerStyle={styles.container}
         keyboardShouldPersistTaps="handled">
         <View style={styles.header}>
-          <Text style={styles.logo}>♟️</Text>
+          <BrandMark />
           <Text style={styles.title}>Welcome back</Text>
           <Text style={styles.subtitle}>Sign in to find your next opponent</Text>
         </View>
@@ -104,10 +104,6 @@ const styles = StyleSheet.create({
   header: {
     alignItems: 'center',
     marginBottom: spacing.xl,
-  },
-  logo: {
-    fontSize: 48,
-    marginBottom: spacing.sm,
   },
   title: {
     ...typography.h1,

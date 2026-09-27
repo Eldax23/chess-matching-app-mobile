@@ -11,7 +11,7 @@ import {
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { AuthStackParamList } from '@/types';
 import { useAuthStore } from '@/store/authStore';
-import { Button, Input } from '@/components';
+import { Button, Input, BrandMark } from '@/components';
 import { colors, spacing, typography } from '@/theme';
 import { validationUtils } from '@/utils';
 
@@ -75,7 +75,7 @@ export default function RegisterScreen({ navigation }: Props) {
         contentContainerStyle={styles.container}
         keyboardShouldPersistTaps="handled">
         <View style={styles.header}>
-          <Text style={styles.logo}>♟️</Text>
+          <BrandMark />
           <Text style={styles.title}>Create account</Text>
           <Text style={styles.subtitle}>Join players near you for OTB chess</Text>
         </View>
@@ -152,10 +152,6 @@ const styles = StyleSheet.create({
   header: {
     alignItems: 'center',
     marginBottom: spacing.xl,
-  },
-  logo: {
-    fontSize: 48,
-    marginBottom: spacing.sm,
   },
   title: {
     ...typography.h1,

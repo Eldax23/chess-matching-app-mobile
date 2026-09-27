@@ -84,28 +84,28 @@ export const useAuthStore = create<
   },
 
   logout: async () => {
-    set({ isLoading: true, error: null });
-    try {
-      await apiClient.logout();
+    const refreshToken = await AsyncStorage.getItem('refreshToken');
 
-      // Clear tokens from storage and API client
-      await AsyncStorage.removeItem('accessToken');
-      await AsyncStorage.removeItem('refreshToken');
-      await AsyncStorage.removeItem('userId');
-
-      apiClient.clearAuthToken();
-
-      set({
-        user: null,
-        accessToken: null,
-        refreshToken: null,
-        isLoading: false,
-      });
-    } catch (error: any) {
-      const message = error.response?.data?.message || 'Logout failed';
-      set({ error: message, isLoading: false });
-      throw error;
+    // Revoking the refresh token server-side is best-effort: the user must be
+    // logged out locally even if the request fails (offline, expired token, ...)
+    if (refreshToken) {
+      try {
+        await apiClient.logout(refreshToken);
+      } catch (error) {
+        console.warn('Server logout failed, clearing local session anyway:', error);
+      }
     }
+
+    await AsyncStorage.multiRemove(['accessToken', 'refreshToken', 'userId']);
+    apiClient.clearAuthToken();
+
+    set({
+      user: null,
+      accessToken: null,
+      refreshToken: null,
+      isLoading: false,
+      error: null,
+    });
   },
 
   restoreToken: async () => {
