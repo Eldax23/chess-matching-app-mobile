@@ -9,6 +9,7 @@ import {
   CreateProposalRequest,
   CreateMatchRequest,
 } from '@/types';
+import { USE_MOCK_DATA, isMockId, mockApi } from '@/mocks';
 
 const BASE_URL = 'https://api.chess-matching-app.com'; // Update with your API URL
 
@@ -109,6 +110,7 @@ class ApiClient {
   }
 
   async getUserProfile(userId: string) {
+    if (USE_MOCK_DATA && isMockId(userId)) return mockApi.userProfile(userId);
     const response = await this.instance.get(`/api/v1/profile/${userId}`);
     return response.data;
   }
@@ -146,38 +148,55 @@ class ApiClient {
   }
 
   async getNearbyUsers(radiusKm: number, hasBoard?: boolean, limit: number = 20) {
-    const response = await this.instance.get('/api/v1/availability/nearby', {
+    const request = this.instance.get('/api/v1/availability/nearby', {
       params: {
         radiusKm,
         hasBoard,
         limit,
       },
     });
-    return response.data;
+    if (!USE_MOCK_DATA) return (await request).data;
+    return withMocks(request, 'users', mockApi.nearbyUsers(radiusKm, hasBoard));
   }
 
   // ===== PROPOSAL ENDPOINTS =====
 
   async createProposal(data: CreateProposalRequest) {
+    if (USE_MOCK_DATA && isMockId(data.receiverId)) {
+      const now = new Date();
+      return {
+        id: `mock-sent-${now.getTime()}`,
+        proposerId: 'me',
+        receiverId: data.receiverId,
+        status: 'pending',
+        message: data.message,
+        meetingLocation: { latitude: data.meetingLatitude, longitude: data.meetingLongitude },
+        expiresAt: new Date(now.getTime() + 60 * 60_000).toISOString(),
+        createdAt: now.toISOString(),
+      };
+    }
     const response = await this.instance.post('/api/v1/proposals', data);
     return response.data;
   }
 
   async getIncomingProposals(status: string = 'pending', limit: number = 20) {
-    const response = await this.instance.get('/api/v1/proposals/incoming', {
+    const request = this.instance.get('/api/v1/proposals/incoming', {
       params: { status, limit },
     });
-    return response.data;
+    if (!USE_MOCK_DATA) return (await request).data;
+    return withMocks(request, 'proposals', mockApi.incoming());
   }
 
   async getOutgoingProposals(status: string = 'pending', limit: number = 20) {
-    const response = await this.instance.get('/api/v1/proposals/outgoing', {
+    const request = this.instance.get('/api/v1/proposals/outgoing', {
       params: { status, limit },
     });
-    return response.data;
+    if (!USE_MOCK_DATA) return (await request).data;
+    return withMocks(request, 'proposals', mockApi.outgoing());
   }
 
   async acceptProposal(proposalId: string) {
+    if (USE_MOCK_DATA && isMockId(proposalId)) return mockApi.accept(proposalId);
     const response = await this.instance.post(
       `/api/v1/proposals/${proposalId}/accept`,
       {},
@@ -186,6 +205,7 @@ class ApiClient {
   }
 
   async rejectProposal(proposalId: string, reason?: string) {
+    if (USE_MOCK_DATA && isMockId(proposalId)) return mockApi.resolve(proposalId);
     const response = await this.instance.post(
       `/api/v1/proposals/${proposalId}/reject`,
       { reason },
@@ -194,6 +214,7 @@ class ApiClient {
   }
 
   async cancelProposal(proposalId: string) {
+    if (USE_MOCK_DATA && isMockId(proposalId)) return mockApi.resolve(proposalId);
     const response = await this.instance.post(
       `/api/v1/proposals/${proposalId}/cancel`,
       {},
@@ -204,6 +225,7 @@ class ApiClient {
   // ===== MATCH ENDPOINTS =====
 
   async recordMatch(data: CreateMatchRequest) {
+    if (USE_MOCK_DATA && isMockId(data.opponentId)) return { id: `mock-match-${Date.now()}` };
     const response = await this.instance.post('/api/v1/matches', data);
     return response.data;
   }
@@ -244,6 +266,23 @@ class ApiClient {
   clearAuthToken() {
     delete this.instance.defaults.headers.common.Authorization;
   }
+}
+
+// Appends mock items to a list response; if the real request fails (e.g. backend
+// offline), the mocks are still returned so the UI can be exercised.
+async function withMocks<T>(
+  request: Promise<{ data: any }>,
+  key: string,
+  mocks: T[],
+) {
+  let data: any = {};
+  try {
+    data = (await request).data ?? {};
+  } catch (error) {
+    console.warn(`[mock] real request failed, showing mock ${key} only`, error);
+  }
+  const items = [...(data[key] ?? []), ...mocks];
+  return { ...data, [key]: items, count: items.length };
 }
 
 export const apiClient = new ApiClient();
