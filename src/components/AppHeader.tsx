@@ -8,7 +8,7 @@ import { useLocationStore } from '@/store/locationStore';
 import { Avatar } from './Avatar';
 import { colors, radius, spacing, typography } from '@/theme';
 
-export const APP_NAME = 'ChessMatching';
+export const APP_NAME = 'BlitzMate';
 
 export default function AppHeader({
   subtitle,
