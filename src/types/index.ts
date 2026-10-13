@@ -111,8 +111,6 @@ export interface UpdateProfileRequest {
   hasBoard?: boolean;
   fideId?: string;
   fideRating?: number;
-  chessComUsername?: string;
-  lichessUsername?: string;
 }
 
 // Location & Availability
