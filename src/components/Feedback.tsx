@@ -39,6 +39,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingVertical: spacing.xxl,
     paddingHorizontal: spacing.lg,
+    backgroundColor: colors.background,
   },
   message: {
     ...typography.body,
@@ -49,7 +50,9 @@ const styles = StyleSheet.create({
     width: 64,
     height: 64,
     borderRadius: 32,
-    backgroundColor: colors.borderLight,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: spacing.md,

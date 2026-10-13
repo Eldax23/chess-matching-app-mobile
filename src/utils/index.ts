@@ -144,3 +144,18 @@ export const validationUtils = {
     }
   },
 };
+
+// Rating utilities
+export const ratingUtils = {
+  // The single most representative rating for a player: FIDE, then Chess.com, then Lichess
+  best(p: {
+    fideRating?: number;
+    chessComRating?: number;
+    lichessRating?: number;
+  }): { label: string; rating: number } | null {
+    if (p.fideRating) return { label: 'FIDE', rating: p.fideRating };
+    if (p.chessComRating) return { label: 'Chess.com', rating: p.chessComRating };
+    if (p.lichessRating) return { label: 'Lichess', rating: p.lichessRating };
+    return null;
+  },
+};

@@ -1,29 +1,36 @@
+import { Platform } from 'react-native';
+
 export const colors = {
-  primary: '#3B82F6',
-  primaryDark: '#2563EB',
-  primaryLight: '#DBEAFE',
+  // Neon green — primary actions, "live" states
+  primary: '#1FF28A',
+  primaryDark: '#17C970',
+  primaryLight: 'rgba(31, 242, 138, 0.14)',
 
-  secondary: '#10B981',
-  secondaryLight: '#D1FAE5',
+  // Electric cyan — secondary accent
+  secondary: '#22D3EE',
+  secondaryLight: 'rgba(34, 211, 238, 0.14)',
 
-  danger: '#EF4444',
-  dangerLight: '#FEE2E2',
+  danger: '#FF4D5E',
+  dangerLight: 'rgba(255, 77, 94, 0.15)',
 
-  warning: '#F59E0B',
-  warningLight: '#FEF3C7',
+  warning: '#FACC15',
+  warningLight: 'rgba(250, 204, 21, 0.14)',
 
-  background: '#F8FAFC',
-  surface: '#FFFFFF',
+  background: '#0A0E13',
+  surface: '#141A21',
+  surfaceAlt: '#1B232C',
+  surfaceRaised: '#222B35',
 
-  textPrimary: '#1E293B',
-  textSecondary: '#64748B',
-  textTertiary: '#94A3B8',
-  textInverse: '#FFFFFF',
+  textPrimary: '#F2F5F8',
+  textSecondary: '#9AA7B5',
+  textTertiary: '#5F6B78',
+  // Text drawn on top of the bright accent colors
+  textInverse: '#03140A',
 
-  border: '#E2E8F0',
-  borderLight: '#F1F5F9',
+  border: '#26303B',
+  borderLight: '#1D252E',
 
-  overlay: 'rgba(15, 23, 42, 0.5)',
+  overlay: 'rgba(0, 0, 0, 0.6)',
 };
 
 export const spacing = {
@@ -37,35 +44,55 @@ export const spacing = {
 
 export const radius = {
   sm: 6,
-  md: 10,
-  lg: 16,
+  md: 12,
+  lg: 18,
   xl: 24,
   full: 999,
 };
 
+export const fonts = {
+  mono: Platform.select({ ios: 'Menlo', default: 'monospace' }),
+};
+
 export const typography = {
-  h1: { fontSize: 28, fontWeight: '700' as const },
+  display: { fontSize: 30, fontWeight: '800' as const, letterSpacing: -0.5 },
+  h1: { fontSize: 28, fontWeight: '800' as const, letterSpacing: -0.3 },
   h2: { fontSize: 22, fontWeight: '700' as const },
-  h3: { fontSize: 18, fontWeight: '600' as const },
+  h3: { fontSize: 18, fontWeight: '700' as const },
   body: { fontSize: 15, fontWeight: '400' as const },
   bodyBold: { fontSize: 15, fontWeight: '600' as const },
   caption: { fontSize: 13, fontWeight: '400' as const },
   small: { fontSize: 11, fontWeight: '400' as const },
+  // Uppercase monospace labels ("READY TO PLAY", "5+0 BLITZ")
+  label: {
+    fontFamily: fonts.mono,
+    fontSize: 11,
+    fontWeight: '700' as const,
+    letterSpacing: 1,
+    textTransform: 'uppercase' as const,
+  },
 };
 
 export const shadow = {
   sm: {
-    shadowColor: '#0F172A',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.06,
-    shadowRadius: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
     elevation: 2,
   },
   md: {
-    shadowColor: '#0F172A',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.4,
+    shadowRadius: 12,
+    elevation: 6,
   },
+  glow: (color: string) => ({
+    shadowColor: color,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.55,
+    shadowRadius: 14,
+    elevation: 8,
+  }),
 };

@@ -2,6 +2,11 @@ import { create } from 'zustand';
 import { apiClient } from '@services/api';
 import { Location, LocationState, NearbyUser } from '@/types';
 
+// Single source of truth for the selectable search radii, shared by the
+// Radar screen's cycle button and the Profile screen's segmented control so
+// the two can't silently drift out of sync with each other.
+export const RADIUS_OPTIONS_KM = [1, 2, 5, 10] as const;
+
 export const useLocationStore = create<
   LocationState & {
     setAvailability: (
@@ -11,6 +16,8 @@ export const useLocationStore = create<
     ) => Promise<void>;
     setUnavailable: () => Promise<void>;
     getNearbyUsers: (radiusKm: number, hasBoard?: boolean) => Promise<NearbyUser[]>;
+    searchRadiusKm: number;
+    setSearchRadius: (radiusKm: number) => void;
     clearError: () => void;
   }
 >(set => ({
@@ -18,6 +25,11 @@ export const useLocationStore = create<
   isAvailable: false,
   isLoading: false,
   error: null,
+  searchRadiusKm: 10,
+
+  setSearchRadius: radiusKm => {
+    set({ searchRadiusKm: radiusKm });
+  },
 
   setAvailability: async (location, hasBoard, expiresInHours = 4) => {
     set({ isLoading: true, error: null });

@@ -7,15 +7,24 @@ interface CardProps {
   style?: StyleProp<ViewStyle>;
   padded?: boolean;
   elevated?: boolean;
+  // Tints the border with an accent color (e.g. highlighted challenge cards)
+  accent?: string;
 }
 
-export default function Card({ children, style, padded = true, elevated = true }: CardProps) {
+export default function Card({
+  children,
+  style,
+  padded = true,
+  elevated = true,
+  accent,
+}: CardProps) {
   return (
     <View
       style={[
         styles.card,
         padded && styles.padded,
         elevated && shadow.sm,
+        accent ? { borderColor: accent + '55' } : null,
         style,
       ]}>
       {children}
