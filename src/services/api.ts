@@ -156,7 +156,7 @@ class ApiClient {
       },
     });
     if (!USE_MOCK_DATA) return (await request).data;
-    return withMocks(request, 'users', mockApi.nearbyUsers(radiusKm, hasBoard));
+    return withMocks(request, 'users', mockApi.nearbyUsers(radiusKm, hasBoard), limit);
   }
 
   // ===== PROPOSAL ENDPOINTS =====
@@ -184,7 +184,7 @@ class ApiClient {
       params: { status, limit },
     });
     if (!USE_MOCK_DATA) return (await request).data;
-    return withMocks(request, 'proposals', mockApi.incoming());
+    return withMocks(request, 'proposals', mockApi.incoming(), limit);
   }
 
   async getOutgoingProposals(status: string = 'pending', limit: number = 20) {
@@ -192,7 +192,7 @@ class ApiClient {
       params: { status, limit },
     });
     if (!USE_MOCK_DATA) return (await request).data;
-    return withMocks(request, 'proposals', mockApi.outgoing());
+    return withMocks(request, 'proposals', mockApi.outgoing(), limit);
   }
 
   async acceptProposal(proposalId: string) {
@@ -274,6 +274,7 @@ async function withMocks<T>(
   request: Promise<{ data: any }>,
   key: string,
   mocks: T[],
+  limit?: number,
 ) {
   let data: any = {};
   try {
@@ -281,7 +282,8 @@ async function withMocks<T>(
   } catch (error) {
     console.warn(`[mock] real request failed, showing mock ${key} only`, error);
   }
-  const items = [...(data[key] ?? []), ...mocks];
+  let items = [...(data[key] ?? []), ...mocks];
+  if (limit !== undefined) items = items.slice(0, limit);
   return { ...data, [key]: items, count: items.length };
 }
 

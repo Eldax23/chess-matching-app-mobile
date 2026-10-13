@@ -14,7 +14,7 @@ import MapView, { Marker, Circle, PROVIDER_DEFAULT } from 'react-native-maps';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { HomeStackParamList, NearbyUser } from '@/types';
-import { useLocationStore } from '@/store/locationStore';
+import { useLocationStore, RADIUS_OPTIONS_KM } from '@/store/locationStore';
 import {
   AppHeader,
   UserCard,
@@ -30,8 +30,6 @@ type Props = NativeStackScreenProps<HomeStackParamList, 'Map'>;
 
 type Filter = 'all' | 'board' | 'rated';
 type View_ = 'list' | 'radar';
-
-const RADIUS_OPTIONS = [1, 2, 5, 10];
 
 const FILTERS: { value: Filter; label: string }[] = [
   { value: 'all', label: 'All' },
@@ -83,8 +81,8 @@ export default function MapScreen({ navigation }: Props) {
   }, [sorted, filter]);
 
   const cycleRadius = () => {
-    const i = RADIUS_OPTIONS.indexOf(searchRadiusKm);
-    setSearchRadius(RADIUS_OPTIONS[(i + 1) % RADIUS_OPTIONS.length]);
+    const i = RADIUS_OPTIONS_KM.indexOf(searchRadiusKm as (typeof RADIUS_OPTIONS_KM)[number]);
+    setSearchRadius(RADIUS_OPTIONS_KM[(i + 1) % RADIUS_OPTIONS_KM.length]);
   };
 
   const controls = (
@@ -130,7 +128,7 @@ export default function MapScreen({ navigation }: Props) {
 
   const hero = (
     <ScanCard
-      players={sorted}
+      players={visible}
       isAvailable={isAvailable}
       onPress={() => navigation.navigate('SetAvailability')}
     />

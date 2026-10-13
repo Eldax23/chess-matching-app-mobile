@@ -160,9 +160,13 @@ const AppTabNavigator = () => {
   const incomingCount = useProposalStore(s => s.incomingProposals.length);
   const fetchIncomingProposals = useProposalStore(s => s.fetchIncomingProposals);
 
-  // Load incoming requests up front so the Challenges badge is accurate
+  // Load incoming requests up front so the Challenges badge is accurate.
+  // ProposalsListScreen will retry this (and surface the error) when the
+  // tab is opened; here we just make sure a failure doesn't go unnoticed.
   useEffect(() => {
-    fetchIncomingProposals().catch(() => {});
+    fetchIncomingProposals().catch(error => {
+      console.warn('Failed to load incoming proposals for tab badge:', error);
+    });
   }, [fetchIncomingProposals]);
 
   return (

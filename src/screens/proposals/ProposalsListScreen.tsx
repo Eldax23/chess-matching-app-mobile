@@ -40,12 +40,16 @@ export default function ProposalsListScreen({ navigation }: Props) {
     rejectProposal,
     cancelProposal,
     isLoading,
+    error,
   } = useProposalStore();
   const isAvailable = useLocationStore(s => s.isAvailable);
   const [tab, setTab] = useState<Tab>('incoming');
   const [busyId, setBusyId] = useState<string | null>(null);
 
   const load = useCallback(() => {
+    // fetchIncomingProposals/fetchOutgoingProposals already store the failure
+    // in `error`, shown below via EmptyState; catch here only to avoid an
+    // unhandled rejection, since the store rethrows after recording it.
     fetchIncomingProposals().catch(() => {});
     fetchOutgoingProposals().catch(() => {});
   }, [fetchIncomingProposals, fetchOutgoingProposals]);
@@ -183,15 +187,19 @@ export default function ProposalsListScreen({ navigation }: Props) {
             />
           )}
           ListEmptyComponent={
-            <EmptyState
-              icon="mail-outline"
-              title={tab === 'incoming' ? 'No challenges yet' : 'No sent challenges'}
-              subtitle={
-                tab === 'incoming'
-                  ? 'Drop your beacon on the Radar so nearby players can challenge you.'
-                  : 'Find a player on the Radar and send them a challenge.'
-              }
-            />
+            error ? (
+              <EmptyState icon="error-outline" title="Couldn't load challenges" subtitle={error} />
+            ) : (
+              <EmptyState
+                icon="mail-outline"
+                title={tab === 'incoming' ? 'No challenges yet' : 'No sent challenges'}
+                subtitle={
+                  tab === 'incoming'
+                    ? 'Drop your beacon on the Radar so nearby players can challenge you.'
+                    : 'Find a player on the Radar and send them a challenge.'
+                }
+              />
+            )
           }
         />
       )}

@@ -28,7 +28,13 @@ export default function UserCard({
   return (
     <Card style={styles.card} padded={false}>
       <TouchableOpacity onPress={onPress} activeOpacity={0.8} style={styles.top}>
-        <Avatar photoUrl={user.photoUrl} username={user.username} size={56} status={accent} />
+        <Avatar
+          photoUrl={user.photoUrl}
+          username={user.username}
+          size={56}
+          status={accent}
+          shape="circle"
+        />
         <View style={styles.info}>
           <View style={styles.nameRow}>
             <Text style={styles.name} numberOfLines={1}>

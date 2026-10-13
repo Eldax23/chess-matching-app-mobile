@@ -4,7 +4,7 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { ProfileStackParamList } from '@/types';
 import { useAuthStore } from '@/store/authStore';
-import { useLocationStore } from '@/store/locationStore';
+import { useLocationStore, RADIUS_OPTIONS_KM } from '@/store/locationStore';
 import {
   AppHeader,
   Avatar,
@@ -19,7 +19,7 @@ import { colors, spacing, typography, radius } from '@/theme';
 
 type Props = NativeStackScreenProps<ProfileStackParamList, 'Profile'>;
 
-const RADIUS_OPTIONS = ['1', '2', '5', '10'] as const;
+const RADIUS_OPTIONS = RADIUS_OPTIONS_KM.map(String);
 
 export default function ProfileScreen({ navigation }: Props) {
   const { user } = useAuthStore();

@@ -88,7 +88,13 @@ export default function ProposalCard({
       </View>
 
       <TouchableOpacity onPress={onPress} activeOpacity={0.8} style={styles.person}>
-        <Avatar photoUrl={person.photoUrl} username={person.username || '?'} size={56} status={accent} />
+        <Avatar
+          photoUrl={person.photoUrl}
+          username={person.username || '?'}
+          size={56}
+          status={accent}
+          shape="circle"
+        />
         <View style={styles.personInfo}>
           <Text style={styles.name} numberOfLines={1}>
             {person.fullName || person.username || 'Challenge sent'}

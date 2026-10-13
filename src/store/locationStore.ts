@@ -2,6 +2,11 @@ import { create } from 'zustand';
 import { apiClient } from '@services/api';
 import { Location, LocationState, NearbyUser } from '@/types';
 
+// Single source of truth for the selectable search radii, shared by the
+// Radar screen's cycle button and the Profile screen's segmented control so
+// the two can't silently drift out of sync with each other.
+export const RADIUS_OPTIONS_KM = [1, 2, 5, 10] as const;
+
 export const useLocationStore = create<
   LocationState & {
     setAvailability: (
