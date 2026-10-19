@@ -8,3 +8,5 @@ gem 'cocoapods', '>= 1.13', '< 1.15'
 gem 'activesupport', '>= 6.1.7.3', '< 7.1.0'
 # Newer concurrent-ruby breaks the activesupport/cocoapods pair above
 gem 'concurrent-ruby', '< 1.3.4'
+# json 3 rejects the quirks_mode option that activesupport 7.0 passes to JSON.generate
+gem 'json', '< 3'
