@@ -10,6 +10,11 @@
       android:roundIcon="@mipmap/ic_launcher_round"
       android:allowBackup="false"
       android:theme="@style/AppTheme">
+      <!-- Google Maps SDK key for react-native-maps. Restricted in Google Cloud to
+           package com.chessmatchingapp + the signing key's SHA-1, so it's safe to ship. -->
+      <meta-data
+        android:name="com.google.android.geo.API_KEY"
+        android:value="AIzaSyDVWLdz4C4XgbGNrqmNFjphm76PmC5qiTs" />
       <activity
         android:name=".MainActivity"
         android:label="@string/app_name"
