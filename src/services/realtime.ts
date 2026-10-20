@@ -36,15 +36,19 @@ export async function startRealtime(handlers: RealtimeHandlers) {
     .configureLogging(LogLevel.Warning)
     .build();
 
-  if (handlers.onJoinRequestReceived) {
-    connection.on('JoinRequestReceived', handlers.onJoinRequestReceived);
-  }
-  if (handlers.onJoinRequestResolved) {
-    connection.on('JoinRequestResolved', handlers.onJoinRequestResolved);
-  }
-  if (handlers.onGatheringUpdated) {
-    connection.on('GatheringUpdated', handlers.onGatheringUpdated);
-  }
+  // Handlers must return nothing: SignalR treats a returned value (even a
+  // promise) as a client result and logs an error, since the server sends
+  // these as plain notifications.
+  const on = <T>(event: string, handler?: (payload: T) => unknown) => {
+    if (handler) {
+      connection!.on(event, (payload: T) => {
+        handler(payload);
+      });
+    }
+  };
+  on('JoinRequestReceived', handlers.onJoinRequestReceived);
+  on('JoinRequestResolved', handlers.onJoinRequestResolved);
+  on('GatheringUpdated', handlers.onGatheringUpdated);
 
   try {
     await connection.start();
