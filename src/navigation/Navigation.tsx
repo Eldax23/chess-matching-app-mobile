@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { NavigationContainer, DarkTheme, Theme } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -244,13 +244,17 @@ const AppTabNavigator = () => {
 };
 
 export const Navigation = () => {
-  const { user, isLoading, restoreToken } = useAuthStore();
+  const { user, restoreToken } = useAuthStore();
+  // Only the startup session check gets a full-screen spinner. Sign-in and
+  // sign-up also set isLoading; swapping the screen out for them would
+  // unmount the form and wipe what the user typed.
+  const [restoring, setRestoring] = useState(true);
 
   useEffect(() => {
-    restoreToken();
+    restoreToken().finally(() => setRestoring(false));
   }, [restoreToken]);
 
-  if (isLoading) {
+  if (restoring) {
     return <LoadingSpinner message="Loading..." />;
   }
 

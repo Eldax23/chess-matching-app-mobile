@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { apiClient } from '@services/api';
+import { USE_MOCK_DATA, MOCK_USER } from '@/mocks';
 import {
   User,
   AuthResponse,
@@ -17,6 +18,7 @@ export const useAuthStore = create<
     restoreToken: () => Promise<void>;
     updateUser: (user: User) => void;
     clearError: () => void;
+    signInWithDemo: () => void;
   }
 >(set => ({
   user: null,
@@ -156,5 +158,12 @@ export const useAuthStore = create<
 
   clearError: () => {
     set({ error: null });
+  },
+
+  // Dev builds only: browse the app as a mock user without a backend. Nothing
+  // is stored, so a reload returns to the login screen.
+  signInWithDemo: () => {
+    if (!USE_MOCK_DATA) return;
+    set({ user: MOCK_USER, accessToken: null, refreshToken: null, error: null, isLoading: false });
   },
 }));

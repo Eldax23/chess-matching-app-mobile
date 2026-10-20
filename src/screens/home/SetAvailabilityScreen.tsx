@@ -160,7 +160,7 @@ export default function SetAvailabilityScreen({ navigation }: Props) {
                 <Text style={[styles.tileTitle, selected && { color: colors.primary }]}>
                   {opt.label}
                 </Text>
-                <Text style={styles.tileHint}>{selected ? 'Selected' : opt.hint}</Text>
+                <Text style={styles.tileHint}>{opt.hint}</Text>
               </TouchableOpacity>
             );
           })}

@@ -120,7 +120,10 @@ export default function GatheringDetailScreen({ route, navigation }: Props) {
       </Card>
 
       <View style={styles.section}>
-        <SectionHeader title={`Who's coming (${gathering.memberCount})`} icon="account-group-outline" />
+        <SectionHeader
+          title={`${active ? "Who's coming" : 'Who came'} (${gathering.memberCount})`}
+          icon="account-group-outline"
+        />
         {gathering.members.map(m => (
           <PersonRow
             key={m.id}

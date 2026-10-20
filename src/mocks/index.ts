@@ -6,6 +6,7 @@
  * locally. Flip it to false (it's always off in release builds) to go fully live.
  */
 import {
+  User,
   NearbyUser,
   UserPublicProfile,
   Gathering,
@@ -190,6 +191,20 @@ const REQUESTS_TO_APPROVE = [
 ];
 
 const ME: GatheringPerson = { id: 'me', username: 'you', hasBoard: true };
+
+// Signed-in user for "Try with demo data"; its id matches ME so the mock
+// gathering you host and your join requests line up
+export const MOCK_USER: User = {
+  id: ME.id,
+  email: 'you@demo.dev',
+  username: ME.username,
+  fullName: 'Demo Player',
+  bio: 'Exploring BlitzMate with demo data.',
+  isAvailable: false,
+  hasBoard: true,
+  lichess: { username: 'demo', rating: 1650 },
+  createdAt: new Date().toISOString(),
+};
 
 // Session state for mock actions
 const answered = new Map<string, JoinRequestStatus>();

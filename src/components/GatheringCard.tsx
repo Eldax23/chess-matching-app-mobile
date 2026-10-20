@@ -84,9 +84,13 @@ export default function GatheringCard({
             color={colors.textSecondary}
           />
           <Text style={styles.meta}>
-            {gathering.distanceKm !== undefined
-              ? `About ${formatDistance(gathering.distanceKm)} away`
-              : 'Venue shared once you join'}
+            {gathering.isMember
+              ? gathering.isHost
+                ? "You're hosting"
+                : "You're in"
+              : gathering.distanceKm !== undefined
+                ? `About ${formatDistance(gathering.distanceKm)} away`
+                : 'Venue shared once you join'}
           </Text>
           {gathering.myPendingRequestId ? (
             <Tag label="Requested" color={colors.warning} style={styles.requested} />
