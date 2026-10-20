@@ -58,7 +58,9 @@ export default function MapScreen({ navigation }: Props) {
       if (here) {
         setCenter({ latitude: here.latitude, longitude: here.longitude });
       }
-      const users = await getNearbyUsers(searchRadiusKm);
+      const { users, center: searchedFrom } = await getNearbyUsers(searchRadiusKm);
+      // Distances are measured from your beacon, so the map centers there too
+      if (searchedFrom) setCenter(searchedFrom);
       setPlayers(users);
     } catch {
       // handled via store error state
@@ -145,6 +147,7 @@ export default function MapScreen({ navigation }: Props) {
               provider={PROVIDER_DEFAULT}
               style={styles.map}
               customMapStyle={DARK_MAP_STYLE}
+              userInterfaceStyle="dark"
               region={{
                 ...center,
                 latitudeDelta: (searchRadiusKm * 2.6) / 111,
@@ -157,9 +160,7 @@ export default function MapScreen({ navigation }: Props) {
                 fillColor="rgba(31, 242, 138, 0.08)"
                 strokeWidth={1.5}
               />
-              {currentLocation && (
-                <Marker coordinate={currentLocation} title="You" pinColor={colors.primary} />
-              )}
+              <Marker coordinate={center} title="You" pinColor={colors.primary} />
             </MapView>
             <View style={styles.mapNote}>
               <Icon name="shield-lock-outline" size={14} color={colors.secondary} />

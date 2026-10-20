@@ -1,11 +1,12 @@
 import React, { useCallback, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Alert, Linking, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Alert, Linking, Platform, TouchableOpacity } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useFocusEffect } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { Gathering, GatheringPerson, GatheringsStackParamList } from '@/types';
 import { apiClient } from '@/services/api';
 import { useGatheringStore } from '@/store/gatheringStore';
+import { useAuthStore } from '@/store/authStore';
 import {
   Avatar,
   Button,
@@ -27,6 +28,7 @@ type Props = NativeStackScreenProps<GatheringsStackParamList, 'GatheringDetail'>
 export default function GatheringDetailScreen({ route, navigation }: Props) {
   const { gatheringId } = route.params;
   const store = useGatheringStore();
+  const myId = useAuthStore(s => s.user?.id);
   const requests = store.requestsToApprove.filter(r => r.gatheringId === gatheringId);
 
   const [gathering, setGathering] = useState<Gathering | null>(null);
@@ -84,11 +86,16 @@ export default function GatheringDetailScreen({ route, navigation }: Props) {
   const status = STATUS_LABELS[gathering.status];
   const active = gathering.status === 'open' || gathering.status === 'gathered';
   const point = gathering.location;
+  const reviewed = gathering.reviewedByMe ?? [];
+  const leftToReview = gathering.members.filter(m => m.id !== myId && !reviewed.includes(m.id));
 
   const openMaps = () => {
     if (!point) return;
+    const destination = `${point.latitude},${point.longitude}`;
     Linking.openURL(
-      `https://www.google.com/maps/dir/?api=1&destination=${point.latitude},${point.longitude}`,
+      Platform.OS === 'ios'
+        ? `http://maps.apple.com/?daddr=${destination}`
+        : `https://www.google.com/maps/dir/?api=1&destination=${destination}`,
     ).catch(() => {});
   };
 
@@ -241,7 +248,7 @@ export default function GatheringDetailScreen({ route, navigation }: Props) {
           </>
         )}
 
-        {gathering.isMember && gathering.status === 'ended' && gathering.memberCount > 1 && (
+        {gathering.isMember && gathering.status === 'ended' && leftToReview.length > 0 && (
           <Button
             title="Review the meetup"
             icon="message-star-outline"

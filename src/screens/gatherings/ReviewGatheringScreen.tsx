@@ -40,7 +40,8 @@ export default function ReviewGatheringScreen({ route, navigation }: Props) {
 
   if (!gathering) return <LoadingSpinner message="Loading..." />;
 
-  const others = gathering.members.filter(m => m.id !== myId);
+  const reviewed = gathering.reviewedByMe ?? [];
+  const others = gathering.members.filter(m => m.id !== myId && !reviewed.includes(m.id));
   const draftFor = (id: string) => drafts[id] ?? EMPTY;
   const update = (id: string, change: Partial<Draft>) =>
     setDrafts(d => ({ ...d, [id]: { ...draftFor(id), ...change } }));
