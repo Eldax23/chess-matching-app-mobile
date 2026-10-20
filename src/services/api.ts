@@ -20,9 +20,20 @@ import { USE_MOCK_DATA, isMockId, mockApi } from '@/mocks';
 
 export const BASE_URL = 'https://api.chess-matching-app.com'; // Update with your API URL
 
+const NO_REFRESH_TOKEN = 'No refresh token';
+
+// True when an error means the stored session can't be used any more (no
+// refresh token, or the server rejected it), as opposed to a network failure
+export const isSessionOver = (error: any): boolean => {
+  if (error?.message === NO_REFRESH_TOKEN) return true;
+  const status = error?.response?.status;
+  return status === 400 || status === 401 || status === 403;
+};
+
 class ApiClient {
   private instance: AxiosInstance;
   private baseURL: string;
+  private onSessionOver?: () => void;
 
   constructor() {
     this.baseURL = BASE_URL;
@@ -61,7 +72,7 @@ class ApiClient {
           try {
             const refreshToken = await AsyncStorage.getItem('refreshToken');
             if (!refreshToken) {
-              throw new Error('No refresh token');
+              throw new Error(NO_REFRESH_TOKEN);
             }
 
             const response = await axios.post(
@@ -72,14 +83,22 @@ class ApiClient {
             const { accessToken, refreshToken: newRefreshToken } = response.data;
 
             await AsyncStorage.setItem('accessToken', accessToken);
-            await AsyncStorage.setItem('refreshToken', newRefreshToken);
+            // The backend doesn't rotate refresh tokens, so the response usually
+            // has none; storing undefined would throw and sign the user out
+            if (newRefreshToken) {
+              await AsyncStorage.setItem('refreshToken', newRefreshToken);
+            }
 
             originalRequest.headers.Authorization = `Bearer ${accessToken}`;
             return this.instance(originalRequest);
-          } catch (refreshError) {
-            // Refresh failed - user needs to re-login
-            await AsyncStorage.removeItem('accessToken');
-            await AsyncStorage.removeItem('refreshToken');
+          } catch (refreshError: any) {
+            // Only a missing or rejected refresh token ends the session; a network
+            // blip during the refresh shouldn't sign the user out
+            if (isSessionOver(refreshError)) {
+              await AsyncStorage.removeItem('accessToken');
+              await AsyncStorage.removeItem('refreshToken');
+              this.onSessionOver?.();
+            }
             throw refreshError;
           }
         }
@@ -331,6 +350,11 @@ class ApiClient {
 
   clearAuthToken() {
     delete this.instance.defaults.headers.common.Authorization;
+  }
+
+  // Called when a refresh is rejected, so the app can return to sign-in
+  setOnSessionOver(handler: () => void) {
+    this.onSessionOver = handler;
   }
 }
 
