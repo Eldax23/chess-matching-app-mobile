@@ -52,7 +52,10 @@ class ApiClient {
       async error => {
         const originalRequest = error.config;
 
-        if (error.response?.status === 401 && !originalRequest._retry) {
+        // Auth endpoints answer 401 for a wrong password or a dead refresh
+        // token; retrying them would replace that message with a refresh error
+        const isAuthCall = originalRequest?.url?.startsWith('/api/v1/auth/');
+        if (error.response?.status === 401 && !originalRequest._retry && !isAuthCall) {
           originalRequest._retry = true;
 
           try {

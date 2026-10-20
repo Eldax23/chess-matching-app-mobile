@@ -50,6 +50,12 @@ export async function startRealtime(handlers: RealtimeHandlers) {
   on('JoinRequestResolved', handlers.onJoinRequestResolved);
   on('GatheringUpdated', handlers.onGatheringUpdated);
 
+  // Sent by the hub but not used by the app yet; a handler keeps SignalR from
+  // warning "No client method with the name ... found" on each one
+  for (const unused of ['UserAvailabilityChanged', 'UserCameOnline', 'UserWentOffline', 'MessageReceived']) {
+    connection.on(unused, () => {});
+  }
+
   try {
     await connection.start();
   } catch (error) {

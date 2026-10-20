@@ -68,11 +68,11 @@ export default function GatheringsListScreen({ navigation }: Props) {
 
   const open = (gatheringId: string) => navigation.navigate('GatheringDetail', { gatheringId });
 
-  const act = async (id: string, action: () => Promise<unknown>, done?: string) => {
+  const act = async (id: string, action: () => Promise<unknown>, done?: [string, string]) => {
     setBusyId(id);
     try {
       await action();
-      if (done) Alert.alert(done);
+      if (done) Alert.alert(...done);
       fetchMine().catch(() => {});
     } catch (e: any) {
       Alert.alert('Something went wrong', e?.response?.data?.message || 'Please try again.');
@@ -134,7 +134,10 @@ export default function GatheringsListScreen({ navigation }: Props) {
               request={item}
               busy={busyId === item.id}
               onOpen={() => open(item.gatheringId)}
-              onApprove={() => act(item.id, () => approveRequest(item.id), `${item.requester.username} is in!`)}
+              onApprove={() => act(item.id, () => approveRequest(item.id), [
+                  `${item.requester.fullName || item.requester.username} is in!`,
+                  'They can see the venue now.',
+                ])}
               onReject={() => act(item.id, () => rejectRequest(item.id))}
             />
           )}
@@ -187,13 +190,13 @@ export default function GatheringsListScreen({ navigation }: Props) {
             <EmptyState icon="wifi-off" title="Couldn't load gatherings" subtitle={error} />
           ) : tab === 'nearby' ? (
             <EmptyState
-              icon="account-group-outline"
+              icon="groups"
               title="No gatherings nearby yet"
               subtitle="Host one and people around you can ask to join."
             />
           ) : (
             <EmptyState
-              icon="calendar-blank-outline"
+              icon="event-busy"
               title="You're not in any gatherings"
               subtitle="Join one nearby or host your own."
             />

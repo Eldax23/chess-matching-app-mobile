@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { apiClient } from '@services/api';
+import { useAuthStore } from './authStore';
 import { Location, LocationState, NearbyUser } from '@/types';
 
 // Single source of truth for the selectable search radii, shared by the
@@ -47,6 +48,10 @@ export const useLocationStore = create<
         isAvailable: true,
         isLoading: false,
       });
+
+      // The beacon also updates the board flag on the profile
+      const { user, updateUser } = useAuthStore.getState();
+      if (user) updateUser({ ...user, hasBoard, isAvailable: true });
     } catch (error: any) {
       const message = error.response?.data?.message || 'Failed to set availability';
       set({ error: message, isLoading: false });
