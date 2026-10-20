@@ -69,3 +69,16 @@ coverage/
 *.mobileprovision
 *.orig.*
 *.cer
+
+# Native build output and local config
+android/app/.cxx/
+local.properties
+*.hprof
+*.jsbundle
+xcuserdata/
+*.xcuserstate
+ios/.xcode.env.local
+
+# Ruby / CocoaPods
+/vendor/bundle/
+.bundle/
