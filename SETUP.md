@@ -61,9 +61,10 @@ yarn install
 ### 2. iOS Setup
 
 ```bash
-# Install Pods
+# Install CocoaPods (pinned in Gemfile) and the pods
+bundle install
 cd ios
-pod install
+bundle exec pod install
 cd ..
 
 # Run on simulator
