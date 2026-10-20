@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { apiClient } from '@services/api';
 import { useAuthStore } from './authStore';
-import { Location, LocationState, NearbyUser } from '@/types';
+import { Location, LocationState, NearbyUser, User } from '@/types';
 
 // Single source of truth for the selectable search radii, shared by the
 // Radar screen's cycle button and the Profile screen's segmented control so
@@ -73,6 +73,9 @@ export const useLocationStore = create<
         isAvailable: false,
         isLoading: false,
       });
+
+      const { user, updateUser } = useAuthStore.getState();
+      if (user) updateUser({ ...user, isAvailable: false });
     } catch (error: any) {
       const message = error.response?.data?.message || 'Failed to set unavailable';
       set({ error: message, isLoading: false });
@@ -97,3 +100,13 @@ export const useLocationStore = create<
     set({ error: null });
   },
 }));
+
+const beaconLive = (user: User | null) =>
+  !!user?.isAvailable &&
+  (!user.availabilityExpiresAt || new Date(user.availabilityExpiresAt).getTime() > Date.now());
+
+// The profile is the server's record of your beacon, so whenever it loads (sign-in,
+// app restart) or changes, the beacon status follows it
+useAuthStore.subscribe((state, prev) => {
+  if (state.user !== prev.user) useLocationStore.setState({ isAvailable: beaconLive(state.user) });
+});
