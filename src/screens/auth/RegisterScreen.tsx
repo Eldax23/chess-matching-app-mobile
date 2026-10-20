@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import {
   View,
   Text,
@@ -9,6 +9,7 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { useFocusEffect } from '@react-navigation/native';
 import { AuthStackParamList } from '@/types';
 import { useAuthStore } from '@/store/authStore';
 import { Button, Input, BrandMark } from '@/components';
@@ -27,6 +28,13 @@ interface FormState {
 
 export default function RegisterScreen({ navigation }: Props) {
   const { register, isLoading, error, clearError } = useAuthStore();
+
+  // Errors from another auth screen shouldn't follow you here
+  useFocusEffect(
+    useCallback(() => {
+      clearError();
+    }, [clearError]),
+  );
   const [form, setForm] = useState<FormState>({
     email: '',
     username: '',

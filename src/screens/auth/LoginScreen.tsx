@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import {
   View,
   Text,
@@ -9,19 +9,28 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { useFocusEffect } from '@react-navigation/native';
 import { AuthStackParamList } from '@/types';
 import { useAuthStore } from '@/store/authStore';
 import { Button, Input, BrandMark } from '@/components';
 import { colors, spacing, typography } from '@/theme';
 import { validationUtils } from '@/utils';
+import { USE_MOCK_DATA } from '@/mocks';
 
 type Props = NativeStackScreenProps<AuthStackParamList, 'Login'>;
 
 export default function LoginScreen({ navigation }: Props) {
-  const { login, isLoading, error, clearError } = useAuthStore();
+  const { login, signInWithDemo, isLoading, error, clearError } = useAuthStore();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fieldErrors, setFieldErrors] = useState<{ email?: string; password?: string }>({});
+
+  // Errors from another auth screen shouldn't follow you here
+  useFocusEffect(
+    useCallback(() => {
+      clearError();
+    }, [clearError]),
+  );
 
   const handleLogin = async () => {
     const errors: typeof fieldErrors = {};
@@ -83,6 +92,15 @@ export default function LoginScreen({ navigation }: Props) {
 
           <Button title="Sign In" onPress={handleLogin} loading={isLoading} />
 
+          {USE_MOCK_DATA && (
+            <Button
+              title="Try with demo data"
+              variant="ghost"
+              onPress={signInWithDemo}
+              style={styles.demo}
+            />
+          )}
+
           <TouchableOpacity style={styles.footer} onPress={() => navigation.navigate('Register')}>
             <Text style={styles.footerText}>
               Don't have an account? <Text style={styles.footerLink}>Sign up</Text>
@@ -95,6 +113,7 @@ export default function LoginScreen({ navigation }: Props) {
 }
 
 const styles = StyleSheet.create({
+  demo: { marginTop: spacing.sm },
   flex: { flex: 1, backgroundColor: colors.background },
   container: {
     flexGrow: 1,
