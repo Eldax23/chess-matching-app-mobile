@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { apiClient } from '@services/api';
 import { useAuthStore } from './authStore';
-import { Location, LocationState, NearbyUser, User } from '@/types';
+import { Location, LocationState, NearbyUsersResponse, User } from '@/types';
 
 // Single source of truth for the selectable search radii, shared by the
 // Radar screen's cycle button and the Profile screen's segmented control so
@@ -16,7 +16,7 @@ export const useLocationStore = create<
       expiresInHours?: number,
     ) => Promise<void>;
     setUnavailable: () => Promise<void>;
-    getNearbyUsers: (radiusKm: number, hasBoard?: boolean) => Promise<NearbyUser[]>;
+    getNearbyUsers: (radiusKm: number, hasBoard?: boolean) => Promise<NearbyUsersResponse>;
     searchRadiusKm: number;
     setSearchRadius: (radiusKm: number) => void;
     clearError: () => void;
@@ -88,7 +88,7 @@ export const useLocationStore = create<
     try {
       const response = await apiClient.getNearbyUsers(radiusKm, hasBoard);
       set({ isLoading: false });
-      return response.users || [];
+      return { ...response, users: response.users || [] };
     } catch (error: any) {
       const message = error.response?.data?.message || 'Failed to fetch nearby users';
       set({ error: message, isLoading: false });

@@ -129,6 +129,8 @@ export interface NearbyUser extends UserPublicProfile {
 }
 
 export interface NearbyUsersResponse {
+  // Where distances were measured from: your last beacon
+  center?: { latitude: number; longitude: number };
   users: NearbyUser[];
   count: number;
 }
@@ -166,6 +168,8 @@ export interface Gathering {
   isMember: boolean;
   isHost: boolean;
   myPendingRequestId?: string;
+  // Ended gatherings only: the people you've already reviewed
+  reviewedByMe?: string[];
   createdAt: string;
 }
 

@@ -26,6 +26,7 @@ declare module 'react-native-maps' {
     initialRegion?: Region;
     onRegionChangeComplete?: (region: Region) => void;
     customMapStyle?: object[];
+    userInterfaceStyle?: 'light' | 'dark';
   }
 
   export interface MarkerProps extends ViewProps {

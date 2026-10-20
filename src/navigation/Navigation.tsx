@@ -3,6 +3,7 @@ import { NavigationContainer, DarkTheme, Theme } from '@react-navigation/native'
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useAuthStore } from '@/store/authStore';
 import { useGatheringStore } from '@/store/gatheringStore';
@@ -68,6 +69,8 @@ const screenOptions = {
   headerTintColor: colors.textPrimary,
   headerStyle: { backgroundColor: colors.background },
   headerShadowVisible: false,
+  // iOS would otherwise label the back button with the previous route's name
+  headerBackTitleVisible: false,
   headerTitleStyle: { fontWeight: '800' as const },
   contentStyle: { backgroundColor: colors.background },
 };
@@ -161,6 +164,9 @@ const AppTabNavigator = () => {
   const requestCount = useGatheringStore(s => s.requestsToApprove.length);
   const fetchRequests = useGatheringStore(s => s.fetchRequests);
   const fetchMine = useGatheringStore(s => s.fetchMine);
+  // A fixed height overrides the tab bar's own safe-area padding, so add the
+  // home-indicator inset back in
+  const { bottom } = useSafeAreaInsets();
 
   // Load join requests up front so the Gatherings badge is accurate, then keep
   // it current over the live connection. GatheringsListScreen retries and
@@ -199,9 +205,9 @@ const AppTabNavigator = () => {
         tabBarStyle: {
           backgroundColor: colors.surface,
           borderTopColor: colors.borderLight,
-          height: 68,
+          height: 68 + bottom,
           paddingTop: 8,
-          paddingBottom: 10,
+          paddingBottom: 10 + bottom,
         },
         tabBarLabelStyle: {
           fontFamily: fonts.mono,
