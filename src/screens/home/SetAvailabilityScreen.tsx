@@ -42,7 +42,7 @@ export default function SetAvailabilityScreen({ navigation }: Props) {
       }
       const location = await getCurrentLocation();
       await setAvailability(location, hasBoard, duration);
-      Alert.alert('Beacon live!', 'Nearby players can now see and challenge you.');
+      Alert.alert('Beacon live!', "Nearby players can now see that you're up for a game.");
     } catch (e: any) {
       Alert.alert('Error', e?.message || 'Could not get your location');
     } finally {
@@ -60,7 +60,7 @@ export default function SetAvailabilityScreen({ navigation }: Props) {
         <Tag label="Park radar broadcast" icon="access-point" color={colors.primary} />
         <Text style={styles.title}>Drop Your Chess Beacon</Text>
         <Text style={styles.subtitle}>
-          Signal nearby players that you are ready for a real-world match.
+          Signal nearby players that you'd like to meet up for a game.
         </Text>
 
         <Card style={styles.statusCard} accent={isAvailable ? colors.primary : undefined}>

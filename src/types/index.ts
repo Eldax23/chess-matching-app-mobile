@@ -14,7 +14,6 @@ export interface User {
   chessCom?: ChessRating;
   lichess?: ChessRating;
   linkedAccounts?: LinkedAccount[];
-  stats?: UserStats;
   createdAt: string;
   lastLogin?: string;
 }
@@ -60,15 +59,6 @@ export interface LichessAuthorizeResponse {
   state: string;
 }
 
-export interface UserStats {
-  totalMatchesPlayed: number;
-  totalWins: number;
-  totalLosses: number;
-  totalDraws: number;
-  winRate: number;
-  avgOpponentRating?: number;
-}
-
 export interface UserPublicProfile {
   id: string;
   username: string;
@@ -80,7 +70,6 @@ export interface UserPublicProfile {
   chessComRating?: number;
   lichessRating?: number;
   linkedAccounts?: LinkedAccount[];
-  stats?: UserStats;
 }
 
 // Authentication
@@ -144,78 +133,102 @@ export interface NearbyUsersResponse {
   count: number;
 }
 
-// Proposals
-export type ProposalStatus = 'pending' | 'accepted' | 'rejected' | 'expired' | 'cancelled';
+// Gatherings: someone hosts a meetup at a venue for a time window, people
+// nearby ask to join, and one approval from anyone already in it lets them in.
+// The app arranges the meetup only; it never tracks games or results.
+export type GatheringStatus = 'open' | 'gathered' | 'ended' | 'cancelled';
 
-export interface Proposal {
+export interface GatheringPerson {
   id: string;
-  proposer: UserPublicProfile;
-  status: ProposalStatus;
+  username: string;
+  fullName?: string;
+  photoUrl?: string;
+  hasBoard: boolean;
+  fideRating?: number;
+  chessComRating?: number;
+  lichessRating?: number;
+}
+
+export interface Gathering {
+  id: string;
+  host: GatheringPerson;
+  status: GatheringStatus;
+  startsAt: string;
+  endsAt: string;
+  note?: string;
+  // Only members see the venue and its exact point
+  venueName?: string;
+  location?: Location;
+  approximateLocation: Location;
+  distanceKm?: number;
+  members: GatheringPerson[];
+  memberCount: number;
+  isMember: boolean;
+  isHost: boolean;
+  myPendingRequestId?: string;
+  createdAt: string;
+}
+
+export interface GatheringsResponse {
+  gatherings: Gathering[];
+  count: number;
+}
+
+export interface CreateGatheringRequest {
+  venueName: string;
+  latitude: number;
+  longitude: number;
+  startsAt: string;
+  endsAt: string;
+  note?: string;
+}
+
+export type JoinRequestStatus = 'pending' | 'approved' | 'rejected' | 'expired' | 'withdrawn';
+
+export interface JoinRequest {
+  id: string;
+  gatheringId: string;
+  requester: GatheringPerson;
   message?: string;
-  meetingLocation: Location;
-  distanceFromYouKm: number;
+  status: JoinRequestStatus;
   expiresAt: string;
   createdAt: string;
 }
 
-export interface CreateProposalRequest {
-  receiverId: string;
-  message?: string;
-  meetingLatitude: number;
-  meetingLongitude: number;
-}
-
-export interface CreateProposalResponse {
-  id: string;
-  proposerId: string;
-  receiverId: string;
-  status: ProposalStatus;
-  message?: string;
-  meetingLocation: Location;
-  expiresAt: string;
-  createdAt: string;
-}
-
-export interface IncomingProposalsResponse {
-  proposals: Proposal[];
+export interface JoinRequestsResponse {
+  requests: JoinRequest[];
   count: number;
 }
 
-export interface AcceptProposalResponse {
-  id: string;
-  status: ProposalStatus;
-  respondedAt: string;
-  matchId: string;
+// Reviews: about the person and the meetup, never chess results. No score.
+export type ReviewTag = 'friendly' | 'on_time' | 'good_company' | 'patient_with_beginners';
+
+export interface CreateReviewRequest {
+  gatheringId: string;
+  revieweeId: string;
+  tags: ReviewTag[];
+  noShow: boolean;
+  comment?: string;
 }
 
-// Matches
-export type MatchOutcome = 'not_played' | 'player1_won' | 'player2_won' | 'draw';
-
-export interface Match {
+export interface Review {
   id: string;
-  opponent: UserPublicProfile;
-  playedAt: string;
-  outcome: MatchOutcome;
-  playedWithBoard?: boolean;
-  timeControl?: string;
-  notes?: string;
+  gatheringId: string;
+  reviewerId: string;
+  reviewerUsername: string;
+  reviewerPhotoUrl?: string;
+  revieweeId: string;
+  tags: ReviewTag[];
+  noShow: boolean;
+  comment?: string;
   createdAt: string;
 }
 
-export interface CreateMatchRequest {
-  opponentId: string;
-  playedAt: string;
-  outcome: MatchOutcome;
-  playedWithBoard?: boolean;
-  timeControl?: string;
-  pgn?: string;
-  notes?: string;
-}
-
-export interface MatchHistoryResponse {
-  matches: Match[];
+export interface ReviewListResponse {
+  reviews: Review[];
   count: number;
-  total: number;
+  tagCounts: { tag: ReviewTag; count: number }[];
+  noShowCount: number;
 }
 
 // Blocking
@@ -247,25 +260,29 @@ export interface WebSocketMessage<T> {
   payload: T;
 }
 
-export interface ProposalReceivedPayload {
-  proposalId: string;
-  proposerId: string;
-  proposerUsername: string;
-  proposerPhotoUrl?: string;
+export interface JoinRequestReceivedPayload {
+  requestId: string;
+  gatheringId: string;
+  requester: GatheringPerson;
   message?: string;
 }
 
-export interface ProposalRespondedPayload {
-  proposalId: string;
-  status: ProposalStatus;
-  responderId: string;
+export interface JoinRequestResolvedPayload {
+  requestId: string;
+  gatheringId: string;
+  status: JoinRequestStatus;
+}
+
+export interface GatheringUpdatedPayload {
+  gatheringId: string;
+  status: GatheringStatus;
+  memberCount: number;
 }
 
 export interface UserAvailabilityChangedPayload {
   userId: string;
   isAvailable: boolean;
   hasBoard: boolean;
-  location?: Location;
 }
 
 export interface UserCameOnlinePayload {
@@ -287,7 +304,7 @@ export type AuthStackParamList = {
 
 export type AppTabParamList = {
   HomeStack: undefined;
-  ProposalsStack: undefined;
+  GatheringsStack: undefined;
   ProfileStack: undefined;
   SettingsStack: undefined;
 };
@@ -298,16 +315,16 @@ export type HomeStackParamList = {
   SetAvailability: undefined;
 };
 
-export type ProposalsStackParamList = {
-  ProposalsList: undefined;
-  ProposalDetail: { proposalId: string };
-  RecordMatch: { matchId: string; opponentId: string; opponentUsername: string };
+export type GatheringsStackParamList = {
+  GatheringsList: undefined;
+  GatheringDetail: { gatheringId: string };
+  CreateGathering: undefined;
+  ReviewGathering: { gatheringId: string };
 };
 
 export type ProfileStackParamList = {
   Profile: undefined;
   EditProfile: undefined;
-  MatchHistory: undefined;
 };
 
 export type SettingsStackParamList = {
@@ -328,19 +345,6 @@ export interface AuthState {
 export interface LocationState {
   currentLocation: Location | null;
   isAvailable: boolean;
-  isLoading: boolean;
-  error: string | null;
-}
-
-export interface ProposalState {
-  incomingProposals: Proposal[];
-  outgoingProposals: Proposal[];
-  isLoading: boolean;
-  error: string | null;
-}
-
-export interface MatchState {
-  matches: Match[];
   isLoading: boolean;
   error: string | null;
 }

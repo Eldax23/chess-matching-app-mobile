@@ -6,14 +6,19 @@ import {
   RegisterRequest,
   UpdateProfileRequest,
   SetAvailabilityRequest,
-  CreateProposalRequest,
-  CreateMatchRequest,
+  CreateGatheringRequest,
+  CreateReviewRequest,
+  Gathering,
+  GatheringsResponse,
+  JoinRequest,
+  JoinRequestsResponse,
+  ReviewListResponse,
   LichessAuthorizeResponse,
   LinkedAccount,
 } from '@/types';
 import { USE_MOCK_DATA, isMockId, mockApi } from '@/mocks';
 
-const BASE_URL = 'https://api.chess-matching-app.com'; // Update with your API URL
+export const BASE_URL = 'https://api.chess-matching-app.com'; // Update with your API URL
 
 class ApiClient {
   private instance: AxiosInstance;
@@ -199,81 +204,99 @@ class ApiClient {
     return withMocks(request, 'users', mockApi.nearbyUsers(radiusKm, hasBoard), limit);
   }
 
-  // ===== PROPOSAL ENDPOINTS =====
+  // ===== GATHERING ENDPOINTS =====
 
-  async createProposal(data: CreateProposalRequest) {
-    if (USE_MOCK_DATA && isMockId(data.receiverId)) {
-      const now = new Date();
-      return {
-        id: `mock-sent-${now.getTime()}`,
-        proposerId: 'me',
-        receiverId: data.receiverId,
-        status: 'pending',
-        message: data.message,
-        meetingLocation: { latitude: data.meetingLatitude, longitude: data.meetingLongitude },
-        expiresAt: new Date(now.getTime() + 60 * 60_000).toISOString(),
-        createdAt: now.toISOString(),
-      };
-    }
-    const response = await this.instance.post('/api/v1/proposals', data);
+  async createGathering(data: CreateGatheringRequest): Promise<Gathering> {
+    const response = await this.instance.post('/api/v1/gatherings', data);
     return response.data;
   }
 
-  async getIncomingProposals(status: string = 'pending', limit: number = 20) {
-    const request = this.instance.get('/api/v1/proposals/incoming', {
-      params: { status, limit },
+  async getNearbyGatherings(
+    latitude: number,
+    longitude: number,
+    radiusKm: number,
+  ): Promise<GatheringsResponse> {
+    const request = this.instance.get('/api/v1/gatherings/nearby', {
+      params: { latitude, longitude, radiusKm },
     });
     if (!USE_MOCK_DATA) return (await request).data;
-    return withMocks(request, 'proposals', mockApi.incoming(), limit);
+    return withMocks(request, 'gatherings', mockApi.nearbyGatherings(radiusKm));
   }
 
-  async getOutgoingProposals(status: string = 'pending', limit: number = 20) {
-    const request = this.instance.get('/api/v1/proposals/outgoing', {
-      params: { status, limit },
-    });
+  async getMyGatherings(): Promise<GatheringsResponse> {
+    const request = this.instance.get('/api/v1/gatherings/mine');
     if (!USE_MOCK_DATA) return (await request).data;
-    return withMocks(request, 'proposals', mockApi.outgoing(), limit);
+    return withMocks(request, 'gatherings', mockApi.myGatherings());
   }
 
-  async acceptProposal(proposalId: string) {
-    if (USE_MOCK_DATA && isMockId(proposalId)) return mockApi.accept(proposalId);
-    const response = await this.instance.post(
-      `/api/v1/proposals/${proposalId}/accept`,
-      {},
-    );
+  async getGathering(gatheringId: string): Promise<Gathering> {
+    if (USE_MOCK_DATA && isMockId(gatheringId)) return mockApi.gathering(gatheringId);
+    const response = await this.instance.get(`/api/v1/gatherings/${gatheringId}`);
     return response.data;
   }
 
-  async rejectProposal(proposalId: string, reason?: string) {
-    if (USE_MOCK_DATA && isMockId(proposalId)) return mockApi.resolve(proposalId);
-    const response = await this.instance.post(
-      `/api/v1/proposals/${proposalId}/reject`,
-      { reason },
-    );
+  async requestToJoin(gatheringId: string, message?: string): Promise<JoinRequest> {
+    if (USE_MOCK_DATA && isMockId(gatheringId)) return mockApi.join(gatheringId, message);
+    const response = await this.instance.post(`/api/v1/gatherings/${gatheringId}/join`, { message });
     return response.data;
   }
 
-  async cancelProposal(proposalId: string) {
-    if (USE_MOCK_DATA && isMockId(proposalId)) return mockApi.resolve(proposalId);
-    const response = await this.instance.post(
-      `/api/v1/proposals/${proposalId}/cancel`,
-      {},
-    );
+  async leaveGathering(gatheringId: string): Promise<void> {
+    if (USE_MOCK_DATA && isMockId(gatheringId)) return mockApi.leave(gatheringId);
+    await this.instance.post(`/api/v1/gatherings/${gatheringId}/leave`, {});
+  }
+
+  async endGathering(gatheringId: string): Promise<void> {
+    if (USE_MOCK_DATA && isMockId(gatheringId)) return mockApi.end(gatheringId);
+    await this.instance.post(`/api/v1/gatherings/${gatheringId}/end`, {});
+  }
+
+  async cancelGathering(gatheringId: string): Promise<void> {
+    if (USE_MOCK_DATA && isMockId(gatheringId)) return mockApi.end(gatheringId);
+    await this.instance.post(`/api/v1/gatherings/${gatheringId}/cancel`, {});
+  }
+
+  // Pending requests to join gatherings you're in
+  async getRequestsToApprove(): Promise<JoinRequestsResponse> {
+    const request = this.instance.get('/api/v1/gatherings/requests');
+    if (!USE_MOCK_DATA) return (await request).data;
+    return withMocks(request, 'requests', mockApi.requestsToApprove());
+  }
+
+  async getMyRequests(): Promise<JoinRequestsResponse> {
+    const request = this.instance.get('/api/v1/gatherings/requests/mine');
+    if (!USE_MOCK_DATA) return (await request).data;
+    return withMocks(request, 'requests', mockApi.myRequests());
+  }
+
+  async approveRequest(requestId: string): Promise<JoinRequest> {
+    if (USE_MOCK_DATA && isMockId(requestId)) return mockApi.answer(requestId, 'approved');
+    const response = await this.instance.post(`/api/v1/gatherings/requests/${requestId}/approve`, {});
     return response.data;
   }
 
-  // ===== MATCH ENDPOINTS =====
-
-  async recordMatch(data: CreateMatchRequest) {
-    if (USE_MOCK_DATA && isMockId(data.opponentId)) return { id: `mock-match-${Date.now()}` };
-    const response = await this.instance.post('/api/v1/matches', data);
+  async rejectRequest(requestId: string): Promise<JoinRequest> {
+    if (USE_MOCK_DATA && isMockId(requestId)) return mockApi.answer(requestId, 'rejected');
+    const response = await this.instance.post(`/api/v1/gatherings/requests/${requestId}/reject`, {});
     return response.data;
   }
 
-  async getMatchHistory(userId?: string, limit: number = 50) {
-    const response = await this.instance.get('/api/v1/matches/history', {
-      params: { userId, limit },
-    });
+  async withdrawRequest(requestId: string): Promise<void> {
+    if (USE_MOCK_DATA && isMockId(requestId)) return mockApi.withdraw(requestId);
+    await this.instance.post(`/api/v1/gatherings/requests/${requestId}/withdraw`, {});
+  }
+
+  // ===== REVIEW ENDPOINTS =====
+
+  async createReview(data: CreateReviewRequest) {
+    if (USE_MOCK_DATA && isMockId(data.gatheringId)) return { id: `mock-review-${Date.now()}` };
+    const response = await this.instance.post('/api/v1/reviews', data);
+    return response.data;
+  }
+
+  async getReviewsForUser(userId: string): Promise<ReviewListResponse> {
+    if (USE_MOCK_DATA && isMockId(userId)) return mockApi.reviewsFor(userId);
+    const response = await this.instance.get(`/api/v1/reviews/user/${userId}`);
     return response.data;
   }
 

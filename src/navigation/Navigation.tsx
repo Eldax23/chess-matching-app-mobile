@@ -5,13 +5,14 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 
 import { useAuthStore } from '@/store/authStore';
-import { useProposalStore } from '@/store/proposalStore';
+import { useGatheringStore } from '@/store/gatheringStore';
+import { startRealtime, stopRealtime } from '@/services/realtime';
 import {
   RootStackParamList,
   AuthStackParamList,
   AppTabParamList,
   HomeStackParamList,
-  ProposalsStackParamList,
+  GatheringsStackParamList,
   ProfileStackParamList,
   SettingsStackParamList,
 } from '@/types';
@@ -27,15 +28,15 @@ import MapScreen from '@/screens/home/MapScreen';
 import UserProfileScreen from '@/screens/home/UserProfileScreen';
 import SetAvailabilityScreen from '@/screens/home/SetAvailabilityScreen';
 
-// Proposals stack screens
-import ProposalsListScreen from '@/screens/proposals/ProposalsListScreen';
-import ProposalDetailScreen from '@/screens/proposals/ProposalDetailScreen';
-import RecordMatchScreen from '@/screens/proposals/RecordMatchScreen';
+// Gatherings stack screens
+import GatheringsListScreen from '@/screens/gatherings/GatheringsListScreen';
+import GatheringDetailScreen from '@/screens/gatherings/GatheringDetailScreen';
+import CreateGatheringScreen from '@/screens/gatherings/CreateGatheringScreen';
+import ReviewGatheringScreen from '@/screens/gatherings/ReviewGatheringScreen';
 
 // Profile stack screens
 import ProfileScreen from '@/screens/profile/ProfileScreen';
 import EditProfileScreen from '@/screens/profile/EditProfileScreen';
-import MatchHistoryScreen from '@/screens/profile/MatchHistoryScreen';
 
 // Settings stack screens
 import SettingsScreen from '@/screens/settings/SettingsScreen';
@@ -46,7 +47,7 @@ const RootStack = createNativeStackNavigator<RootStackParamList>();
 const AuthStack = createNativeStackNavigator<AuthStackParamList>();
 const AppTabs = createBottomTabNavigator<AppTabParamList>();
 const HomeStack = createNativeStackNavigator<HomeStackParamList>();
-const ProposalsStack = createNativeStackNavigator<ProposalsStackParamList>();
+const GatheringsStack = createNativeStackNavigator<GatheringsStackParamList>();
 const ProfileStack = createNativeStackNavigator<ProfileStackParamList>();
 const SettingsStack = createNativeStackNavigator<SettingsStackParamList>();
 
@@ -76,7 +77,7 @@ const noHeader = { headerShown: false };
 
 const TAB_ICONS: Record<keyof AppTabParamList, string> = {
   HomeStack: 'radar',
-  ProposalsStack: 'sword-cross',
+  GatheringsStack: 'account-group',
   ProfileStack: 'account-circle-outline',
   SettingsStack: 'cog-outline',
 };
@@ -104,24 +105,29 @@ const HomeStackNavigator = () => (
   </HomeStack.Navigator>
 );
 
-const ProposalsStackNavigator = () => (
-  <ProposalsStack.Navigator screenOptions={screenOptions}>
-    <ProposalsStack.Screen
-      name="ProposalsList"
-      component={ProposalsListScreen}
+const GatheringsStackNavigator = () => (
+  <GatheringsStack.Navigator screenOptions={screenOptions}>
+    <GatheringsStack.Screen
+      name="GatheringsList"
+      component={GatheringsListScreen}
       options={noHeader}
     />
-    <ProposalsStack.Screen
-      name="ProposalDetail"
-      component={ProposalDetailScreen}
-      options={{ headerTitle: 'Request Details' }}
+    <GatheringsStack.Screen
+      name="GatheringDetail"
+      component={GatheringDetailScreen}
+      options={{ headerTitle: 'Gathering' }}
     />
-    <ProposalsStack.Screen
-      name="RecordMatch"
-      component={RecordMatchScreen}
-      options={{ headerTitle: 'Record Match' }}
+    <GatheringsStack.Screen
+      name="CreateGathering"
+      component={CreateGatheringScreen}
+      options={{ headerTitle: 'Host a Gathering' }}
     />
-  </ProposalsStack.Navigator>
+    <GatheringsStack.Screen
+      name="ReviewGathering"
+      component={ReviewGatheringScreen}
+      options={{ headerTitle: 'How Did It Go?' }}
+    />
+  </GatheringsStack.Navigator>
 );
 
 const ProfileStackNavigator = () => (
@@ -131,11 +137,6 @@ const ProfileStackNavigator = () => (
       name="EditProfile"
       component={EditProfileScreen}
       options={{ headerTitle: 'Edit Profile' }}
-    />
-    <ProfileStack.Screen
-      name="MatchHistory"
-      component={MatchHistoryScreen}
-      options={{ headerTitle: 'Match History' }}
     />
   </ProfileStack.Navigator>
 );
@@ -157,17 +158,34 @@ const SettingsStackNavigator = () => (
 );
 
 const AppTabNavigator = () => {
-  const incomingCount = useProposalStore(s => s.incomingProposals.length);
-  const fetchIncomingProposals = useProposalStore(s => s.fetchIncomingProposals);
+  const requestCount = useGatheringStore(s => s.requestsToApprove.length);
+  const fetchRequests = useGatheringStore(s => s.fetchRequests);
+  const fetchMine = useGatheringStore(s => s.fetchMine);
 
-  // Load incoming requests up front so the Challenges badge is accurate.
-  // ProposalsListScreen will retry this (and surface the error) when the
-  // tab is opened; here we just make sure a failure doesn't go unnoticed.
+  // Load join requests up front so the Gatherings badge is accurate, then keep
+  // it current over the live connection. GatheringsListScreen retries and
+  // surfaces errors when opened; here we just make sure failures are logged.
   useEffect(() => {
-    fetchIncomingProposals().catch(error => {
-      console.warn('Failed to load incoming proposals for tab badge:', error);
+    const refresh = () =>
+      fetchRequests().catch(error => {
+        console.warn('Failed to load join requests for tab badge:', error);
+      });
+    refresh();
+    startRealtime({
+      onJoinRequestReceived: refresh,
+      onJoinRequestResolved: () => {
+        refresh();
+        fetchMine().catch(() => {});
+      },
+      onGatheringUpdated: () => {
+        refresh();
+        fetchMine().catch(() => {});
+      },
     });
-  }, [fetchIncomingProposals]);
+    return () => {
+      stopRealtime();
+    };
+  }, [fetchRequests, fetchMine]);
 
   return (
     <AppTabs.Navigator
@@ -204,11 +222,11 @@ const AppTabNavigator = () => {
         options={{ tabBarLabel: 'RADAR' }}
       />
       <AppTabs.Screen
-        name="ProposalsStack"
-        component={ProposalsStackNavigator}
+        name="GatheringsStack"
+        component={GatheringsStackNavigator}
         options={{
-          tabBarLabel: 'CHALLENGES',
-          tabBarBadge: incomingCount > 0 ? incomingCount : undefined,
+          tabBarLabel: 'GATHERINGS',
+          tabBarBadge: requestCount > 0 ? requestCount : undefined,
         }}
       />
       <AppTabs.Screen

@@ -17,8 +17,8 @@ export default function AboutScreen() {
 
       <Card style={styles.section}>
         <Text style={styles.paragraph}>
-          Find nearby chess players, challenge them to over-the-board games, and track
-          your results — all in one app.
+          Chess is better together. Find people nearby who want to sit down over a
+          board, host a meetup or join one, and make some chess friends.
         </Text>
       </Card>
 

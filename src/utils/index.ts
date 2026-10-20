@@ -1,4 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { ReviewTag } from '@/types';
 
 const TOKEN_KEY = 'accessToken';
 const REFRESH_TOKEN_KEY = 'refreshToken';
@@ -158,4 +159,12 @@ export const ratingUtils = {
     if (p.lichessRating) return { label: 'Lichess', rating: p.lichessRating };
     return null;
   },
+};
+
+// Review tags describe how someone was to meet, never how they played
+export const REVIEW_TAG_LABELS: Record<ReviewTag, string> = {
+  friendly: 'Friendly',
+  on_time: 'On time',
+  good_company: 'Good company',
+  patient_with_beginners: 'Patient with beginners',
 };
