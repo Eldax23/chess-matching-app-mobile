@@ -28,7 +28,6 @@ export default function ProfileScreen({ navigation }: Props) {
 
   if (!user) return null;
 
-  const stats = user.stats;
   const ratings = [
     { label: 'FIDE', rating: user.fideRating, color: colors.primary },
     { label: 'Chess.com', rating: user.chessCom?.rating, color: colors.secondary },
@@ -74,16 +73,6 @@ export default function ProfileScreen({ navigation }: Props) {
         </TouchableOpacity>
 
         {user.bio ? <Text style={styles.bio}>{user.bio}</Text> : null}
-
-        {stats && (
-          <View style={styles.statsRow}>
-            <Stat value={stats.totalMatchesPlayed} label="Games" color={colors.textPrimary} />
-            <Stat value={stats.totalWins} label="Wins" color={colors.primary} />
-            <Stat value={stats.totalLosses} label="Losses" color={colors.danger} />
-            <Stat value={stats.totalDraws} label="Draws" color={colors.secondary} />
-            <Stat value={`${stats.winRate}%`} label="Win rate" color={colors.warning} />
-          </View>
-        )}
 
         <View style={styles.section}>
           <SectionHeader title="Radar & Proximity Beacon" icon="radar" />
@@ -188,13 +177,13 @@ export default function ProfileScreen({ navigation }: Props) {
 
         <TouchableOpacity
           activeOpacity={0.85}
-          style={styles.matchHistory}
-          onPress={() => navigation.navigate('MatchHistory')}>
+          style={styles.gatheringsLink}
+          onPress={() => navigation.getParent()?.navigate('GatheringsStack', { screen: 'GatheringsList' })}>
           <Card style={styles.row}>
-            <IconTile icon="history" color={colors.warning} />
+            <IconTile icon="account-group-outline" color={colors.warning} />
             <View style={styles.gearInfo}>
-              <Text style={styles.rowTitle}>Street Duel Log</Text>
-              <Text style={styles.rowSub}>Your full over-the-board match history</Text>
+              <Text style={styles.rowTitle}>My gatherings</Text>
+              <Text style={styles.rowSub}>Meetups you're hosting or have joined</Text>
             </View>
             <Icon name="chevron-right" size={20} color={colors.textTertiary} />
           </Card>
@@ -204,14 +193,6 @@ export default function ProfileScreen({ navigation }: Props) {
   );
 }
 
-function Stat({ value, label, color }: { value: number | string; label: string; color: string }) {
-  return (
-    <View style={styles.stat}>
-      <Text style={[styles.statValue, { color }]}>{value}</Text>
-      <Text style={styles.statLabel}>{label}</Text>
-    </View>
-  );
-}
 
 const styles = StyleSheet.create({
   flex: { flex: 1, backgroundColor: colors.background },
@@ -243,23 +224,6 @@ const styles = StyleSheet.create({
     marginTop: spacing.md,
     paddingHorizontal: spacing.xs,
   },
-  statsRow: {
-    flexDirection: 'row',
-    backgroundColor: colors.surface,
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    borderColor: colors.borderLight,
-    paddingVertical: spacing.md,
-    marginTop: spacing.md,
-  },
-  stat: { flex: 1, alignItems: 'center' },
-  statValue: {
-    ...typography.label,
-    fontSize: 20,
-    letterSpacing: 0,
-    textTransform: 'none',
-  },
-  statLabel: { ...typography.label, fontSize: 9, color: colors.textTertiary, marginTop: 4 },
   section: { marginTop: spacing.lg },
   radiusHeader: {
     flexDirection: 'row',
@@ -292,5 +256,5 @@ const styles = StyleSheet.create({
   editText: { ...typography.label, fontSize: 11, color: colors.textPrimary },
   linkedRatings: { marginTop: spacing.sm },
   linkedAccount: { marginBottom: spacing.sm },
-  matchHistory: { marginTop: spacing.md },
+  gatheringsLink: { marginTop: spacing.md },
 });

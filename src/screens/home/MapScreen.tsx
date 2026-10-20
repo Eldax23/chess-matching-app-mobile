@@ -28,13 +28,13 @@ import { getCurrentLocation, requestLocationPermission, formatDistance } from '@
 
 type Props = NativeStackScreenProps<HomeStackParamList, 'Map'>;
 
-type Filter = 'all' | 'board' | 'rated';
+// No level filter on purpose: ratings are shown, never used to hide anyone
+type Filter = 'all' | 'board';
 type View_ = 'list' | 'radar';
 
 const FILTERS: { value: Filter; label: string }[] = [
   { value: 'all', label: 'All' },
   { value: 'board', label: 'Has board' },
-  { value: 'rated', label: 'Rated' },
 ];
 
 // Alternate card accents like the design (green, cyan, green, ...)
@@ -76,7 +76,6 @@ export default function MapScreen({ navigation }: Props) {
 
   const visible = useMemo(() => {
     if (filter === 'board') return sorted.filter(p => p.hasBoard);
-    if (filter === 'rated') return sorted.filter(p => p.fideRating || p.chessComRating || p.lichessRating);
     return sorted;
   }, [sorted, filter]);
 
@@ -194,7 +193,7 @@ export default function MapScreen({ navigation }: Props) {
               {controls}
               {hero}
               <View style={styles.listTitleRow}>
-                <Text style={styles.listTitle}>Active Challengers Nearby</Text>
+                <Text style={styles.listTitle}>Players Nearby</Text>
                 <Text style={styles.listSort}>Sorted by distance</Text>
               </View>
             </>
@@ -204,13 +203,12 @@ export default function MapScreen({ navigation }: Props) {
               user={item}
               accent={ACCENTS[index % ACCENTS.length]}
               onPress={() => navigation.navigate('UserProfile', { userId: item.id })}
-              onChallenge={() => navigation.navigate('UserProfile', { userId: item.id })}
             />
           )}
           ListEmptyComponent={
             <EmptyState
               icon="explore-off"
-              title="No challengers in range"
+              title="Nobody in range"
               subtitle="Widen your radius or drop a beacon so players can find you."
             />
           }

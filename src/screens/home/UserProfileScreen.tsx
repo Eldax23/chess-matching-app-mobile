@@ -2,32 +2,20 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, Alert } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import Icon from 'react-native-vector-icons/MaterialIcons';
-import { HomeStackParamList, UserPublicProfile } from '@/types';
+import { HomeStackParamList, ReviewListResponse, UserPublicProfile } from '@/types';
 import { apiClient } from '@/services/api';
-import { useProposalStore } from '@/store/proposalStore';
-import {
-  Avatar,
-  RatingBadge,
-  Button,
-  Card,
-  Input,
-  LinkedAccountCard,
-  LoadingSpinner,
-} from '@/components';
+import { Avatar, RatingBadge, Card, LinkedAccountCard, LoadingSpinner, Tag } from '@/components';
 import { colors, spacing, typography, radius } from '@/theme';
-import { getCurrentLocation, requestLocationPermission } from '@/utils/geolocation';
+import { REVIEW_TAG_LABELS } from '@/utils';
 
 type Props = NativeStackScreenProps<HomeStackParamList, 'UserProfile'>;
 
-export default function UserProfileScreen({ route, navigation }: Props) {
+export default function UserProfileScreen({ route }: Props) {
   const { userId } = route.params;
-  const { createProposal } = useProposalStore();
 
   const [profile, setProfile] = useState<UserPublicProfile | null>(null);
+  const [reviews, setReviews] = useState<ReviewListResponse | null>(null);
   const [loading, setLoading] = useState(true);
-  const [message, setMessage] = useState('');
-  const [sending, setSending] = useState(false);
-  const [showProposeForm, setShowProposeForm] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -40,37 +28,15 @@ export default function UserProfileScreen({ route, navigation }: Props) {
         setLoading(false);
       }
     })();
+    // Reviews are a nice-to-have; the profile still shows without them
+    apiClient
+      .getReviewsForUser(userId)
+      .then(setReviews)
+      .catch(() => {});
   }, [userId]);
-
-  const handleSendProposal = async () => {
-    setSending(true);
-    try {
-      const granted = await requestLocationPermission();
-      if (!granted) {
-        Alert.alert('Location needed', 'Enable location to set a meeting spot.');
-        return;
-      }
-      const location = await getCurrentLocation();
-      await createProposal({
-        receiverId: userId,
-        message: message.trim() || undefined,
-        meetingLatitude: location.latitude,
-        meetingLongitude: location.longitude,
-      });
-      Alert.alert('Proposal sent!', `Your challenge was sent to ${profile?.username}.`, [
-        { text: 'OK', onPress: () => navigation.goBack() },
-      ]);
-    } catch (e: any) {
-      Alert.alert('Error', e?.response?.data?.message || 'Failed to send proposal');
-    } finally {
-      setSending(false);
-    }
-  };
 
   if (loading) return <LoadingSpinner message="Loading profile..." />;
   if (!profile) return null;
-
-  const stats = profile.stats;
 
   return (
     <ScrollView style={styles.flex} contentContainerStyle={styles.container}>
@@ -109,60 +75,43 @@ export default function UserProfileScreen({ route, navigation }: Props) {
         </View>
       ))}
 
-      {stats && (
-        <Card style={styles.section}>
-          <Text style={styles.sectionTitle}>OTB Stats</Text>
-          <View style={styles.statsRow}>
-            <View style={styles.statItem}>
-              <Text style={styles.statValue}>{stats.totalMatchesPlayed}</Text>
-              <Text style={styles.statLabel}>Games</Text>
+      <Card style={styles.section}>
+        <Text style={styles.sectionTitle}>What people say</Text>
+        {reviews && reviews.count > 0 ? (
+          <>
+            <View style={styles.badgeRow}>
+              {reviews.tagCounts.map(t => (
+                <Tag
+                  key={t.tag}
+                  label={`${REVIEW_TAG_LABELS[t.tag]} · ${t.count}`}
+                  color={colors.primary}
+                  style={styles.reviewTag}
+                />
+              ))}
+              {reviews.noShowCount > 0 && (
+                <Tag
+                  label={`Missed ${reviews.noShowCount} meetup${reviews.noShowCount > 1 ? 's' : ''}`}
+                  color={colors.danger}
+                  style={styles.reviewTag}
+                />
+              )}
             </View>
-            <View style={styles.statItem}>
-              <Text style={styles.statValue}>{stats.totalWins}</Text>
-              <Text style={styles.statLabel}>Wins</Text>
-            </View>
-            <View style={styles.statItem}>
-              <Text style={styles.statValue}>{stats.totalLosses}</Text>
-              <Text style={styles.statLabel}>Losses</Text>
-            </View>
-            <View style={styles.statItem}>
-              <Text style={styles.statValue}>{stats.winRate}%</Text>
-              <Text style={styles.statLabel}>Win rate</Text>
-            </View>
-          </View>
-        </Card>
-      )}
-
-      {showProposeForm ? (
-        <Card style={styles.section}>
-          <Text style={styles.sectionTitle}>Send a challenge</Text>
+            {reviews.reviews
+              .filter(r => r.comment)
+              .slice(0, 3)
+              .map(r => (
+                <View key={r.id} style={styles.comment}>
+                  <Text style={styles.commentText}>"{r.comment}"</Text>
+                  <Text style={styles.commentBy}>@{r.reviewerUsername}</Text>
+                </View>
+              ))}
+          </>
+        ) : (
           <Text style={styles.helperText}>
-            Your current location will be shared as the meeting spot.
+            No reviews yet. They appear after people meet up at a gathering.
           </Text>
-          <Input
-            placeholder="Add a message (optional)"
-            value={message}
-            onChangeText={setMessage}
-            multiline
-            style={styles.messageInput}
-          />
-          <Button
-            title="Send Proposal"
-            onPress={handleSendProposal}
-            loading={sending}
-          />
-          <Button
-            title="Cancel"
-            variant="ghost"
-            onPress={() => setShowProposeForm(false)}
-            style={styles.cancelButton}
-          />
-        </Card>
-      ) : (
-        <View style={styles.footer}>
-          <Button title="Challenge to a game" onPress={() => setShowProposeForm(true)} />
-        </View>
-      )}
+        )}
+      </Card>
     </ScrollView>
   );
 }
@@ -192,12 +141,9 @@ const styles = StyleSheet.create({
   sectionTitle: { ...typography.h3, color: colors.textPrimary, marginBottom: spacing.sm },
   bio: { ...typography.body, color: colors.textPrimary },
   badgeRow: { flexDirection: 'row', flexWrap: 'wrap' },
-  statsRow: { flexDirection: 'row', justifyContent: 'space-between' },
-  statItem: { alignItems: 'center', flex: 1 },
-  statValue: { ...typography.h2, color: colors.textPrimary },
-  statLabel: { ...typography.caption, color: colors.textSecondary, marginTop: 2 },
-  helperText: { ...typography.caption, color: colors.textSecondary, marginBottom: spacing.md },
-  messageInput: { minHeight: 60, textAlignVertical: 'top' },
-  cancelButton: { marginTop: spacing.sm },
-  footer: { marginTop: spacing.md },
+  reviewTag: { marginRight: spacing.sm, marginBottom: spacing.xs },
+  comment: { marginTop: spacing.sm },
+  commentText: { ...typography.body, color: colors.textPrimary, fontStyle: 'italic' },
+  commentBy: { ...typography.caption, color: colors.textSecondary, marginTop: 2 },
+  helperText: { ...typography.caption, color: colors.textSecondary },
 });

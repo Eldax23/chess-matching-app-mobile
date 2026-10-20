@@ -2,15 +2,17 @@
  * Static fixtures for eyeballing the UI without other real players around.
  *
  * When USE_MOCK_DATA is on, apiClient appends these to the real results of the
- * nearby-players and proposal endpoints, and handles any action on a `mock-*` id
+ * nearby-players and gathering endpoints, and handles any action on a `mock-*` id
  * locally. Flip it to false (it's always off in release builds) to go fully live.
  */
 import {
   NearbyUser,
-  Proposal,
-  ProposalStatus,
   UserPublicProfile,
-  AcceptProposalResponse,
+  Gathering,
+  GatheringPerson,
+  JoinRequest,
+  JoinRequestStatus,
+  ReviewListResponse,
 } from '@/types';
 
 export const USE_MOCK_DATA = __DEV__ && true;
@@ -20,17 +22,6 @@ export const isMockId = (id?: string) => !!id && id.startsWith('mock-');
 const avatar = (n: number) => `https://i.pravatar.cc/200?img=${n}`;
 
 const minutesFromNow = (m: number) => new Date(Date.now() + m * 60_000).toISOString();
-
-const stats = (wins: number, losses: number, draws: number) => {
-  const total = wins + losses + draws;
-  return {
-    totalMatchesPlayed: total,
-    totalWins: wins,
-    totalLosses: losses,
-    totalDraws: draws,
-    winRate: total ? Math.round((wins / total) * 100) : 0,
-  };
-};
 
 // Each player exercises a different combination of card states
 const PLAYERS: NearbyUser[] = [
@@ -65,7 +56,6 @@ const PLAYERS: NearbyUser[] = [
         lastSyncedAt: minutesFromNow(-240),
       },
     ],
-    stats: stats(34, 12, 6),
     distanceKm: 0.15,
   },
   {
@@ -77,11 +67,10 @@ const PLAYERS: NearbyUser[] = [
     bio: 'Sipping coffee & ready. Prefer rapid.',
     hasBoard: false,
     chessComRating: 2010,
-    stats: stats(8, 3, 1),
     distanceKm: 0.4,
   },
   {
-    // No photo (initials placeholder), unrated, brand new: "New" / "Fresh challenger"
+    // No photo (initials placeholder), no rating linked
     id: 'mock-sam',
     username: 'sam_newbie',
     fullName: 'Sam Okafor',
@@ -117,7 +106,6 @@ const PLAYERS: NearbyUser[] = [
         lastSyncedAt: minutesFromNow(-95),
       },
     ],
-    stats: stats(2, 5, 0),
     distanceKm: 1.8,
   },
   {
@@ -127,130 +115,114 @@ const PLAYERS: NearbyUser[] = [
     photoUrl: avatar(68),
     hasBoard: true,
     fideRating: 2380,
-    stats: stats(120, 14, 22),
     distanceKm: 7.4,
   },
 ];
 
 const profileOf = ({ distanceKm: _d, ...p }: NearbyUser): UserPublicProfile => p;
 
-const player = (id: string) => profileOf(PLAYERS.find(p => p.id === id)!);
-
-type ProposalSeed = {
-  id: string;
-  from: string;
-  status: ProposalStatus;
-  message?: string;
-  address?: string;
-  distanceKm: number;
-  createdMinsAgo: number;
-  expiresInMins: number;
+const person = (id: string): GatheringPerson => {
+  const { id: pid, username, fullName, photoUrl, hasBoard, fideRating, chessComRating, lichessRating } =
+    PLAYERS.find(p => p.id === id)!;
+  return { id: pid, username, fullName, photoUrl, hasBoard, fideRating, chessComRating, lichessRating };
 };
 
-// Incoming: urgent countdown, normal, no message, long message
-const INCOMING: ProposalSeed[] = [
+type GatheringSeed = {
+  id: string;
+  host: string;
+  guests: string[];
+  venueName: string;
+  note?: string;
+  distanceKm: number;
+  startsInMins: number;
+  hours: number;
+  mine?: boolean;
+};
+
+// Nearby: open, gathered, a big one, one starting later; plus one you host
+const GATHERINGS: GatheringSeed[] = [
   {
-    id: 'mock-in-urgent',
-    from: 'mock-marcus',
-    status: 'pending',
-    message: 'Quick 5+0? I have the board and clock set up already.',
-    address: 'Table 4, Fountain Plaza',
-    distanceKm: 0.15,
-    createdMinsAgo: 26,
-    expiresInMins: 4.5,
+    id: 'mock-g-plaza',
+    host: 'mock-marcus',
+    guests: ['mock-elena'],
+    venueName: 'Fountain Plaza tables',
+    note: 'Blitz all evening, two boards and clocks.',
+    distanceKm: 0.5,
+    startsInMins: -30,
+    hours: 3,
   },
   {
-    id: 'mock-in-cafe',
-    from: 'mock-elena',
-    status: 'pending',
-    message: 'Coffee & tactics at The Bean Cafe?',
-    address: 'The Bean Cafe — indoor booth',
-    distanceKm: 0.4,
-    createdMinsAgo: 12,
-    expiresInMins: 48,
+    id: 'mock-g-cafe',
+    host: 'mock-alexandra',
+    guests: [],
+    venueName: 'The Bean Cafe',
+    note: "Still learning, happy to go over games together. I'll have a red jacket on.",
+    distanceKm: 2,
+    startsInMins: 45,
+    hours: 2,
   },
   {
-    id: 'mock-in-plain',
-    from: 'mock-sam',
-    status: 'pending',
-    distanceKm: 0.9,
-    createdMinsAgo: 0,
-    expiresInMins: 60,
+    id: 'mock-g-club',
+    host: 'mock-gm',
+    guests: ['mock-marcus', 'mock-elena', 'mock-alexandra'],
+    venueName: 'Central Square Chess Pavilion',
+    note: 'Weekly meetup, all levels welcome.',
+    distanceKm: 7.5,
+    startsInMins: 180,
+    hours: 4,
   },
   {
-    id: 'mock-in-long',
-    from: 'mock-alexandra',
-    status: 'pending',
-    message:
-      "Hi! I'm still learning and would love a relaxed game — happy to go over the moves together afterwards if you're up for it. I'll be on the bench by the north entrance, wearing a red jacket.",
-    address: 'North Entrance Benches, Riverside Park Community Garden',
-    distanceKm: 1.8,
-    createdMinsAgo: 95,
-    expiresInMins: 180,
+    id: 'mock-g-mine',
+    host: 'me',
+    guests: ['mock-sam'],
+    venueName: 'Riverside Park benches',
+    distanceKm: 1,
+    startsInMins: 60,
+    hours: 2,
+    mine: true,
   },
 ];
 
-// Sent: one of every status so the tags/actions can be compared
-const OUTGOING: ProposalSeed[] = [
-  {
-    id: 'mock-out-pending',
-    from: 'mock-gm',
-    status: 'pending',
-    message: 'Would be an honour to play you!',
-    address: 'Chess Pavilion, Central Square',
-    distanceKm: 7.4,
-    createdMinsAgo: 3,
-    expiresInMins: 57,
-  },
-  {
-    id: 'mock-out-accepted',
-    from: 'mock-elena',
-    status: 'accepted',
-    address: 'The Bean Cafe',
-    distanceKm: 0.4,
-    createdMinsAgo: 40,
-    expiresInMins: 20,
-  },
-  {
-    id: 'mock-out-rejected',
-    from: 'mock-marcus',
-    status: 'rejected',
-    message: 'Rematch?',
-    distanceKm: 0.15,
-    createdMinsAgo: 180,
-    expiresInMins: -120,
-  },
-  {
-    id: 'mock-out-expired',
-    from: 'mock-sam',
-    status: 'expired',
-    distanceKm: 0.9,
-    createdMinsAgo: 300,
-    expiresInMins: -240,
-  },
+// People asking to join your gathering, and your own requests
+const REQUESTS_TO_APPROVE = [
+  { id: 'mock-r-elena', gatheringId: 'mock-g-mine', from: 'mock-elena', message: 'Can I join? I can bring a clock.' },
+  { id: 'mock-r-gm', gatheringId: 'mock-g-mine', from: 'mock-gm' },
 ];
 
-// Seeds are turned into proposals at fetch time so countdowns are relative to "now"
-const build = (s: ProposalSeed): Proposal => {
-  const p = player(s.from);
+const ME: GatheringPerson = { id: 'me', username: 'you', hasBoard: true };
+
+// Session state for mock actions
+const answered = new Map<string, JoinRequestStatus>();
+const myRequests = new Map<string, JoinRequest>();
+const closed = new Set<string>();
+
+const buildGathering = (g: GatheringSeed): Gathering => {
+  const members = [g.mine ? ME : person(g.host), ...g.guests.map(person)];
+  const now = Date.now();
+  const point = { latitude: 30.0444 + g.distanceKm / 111, longitude: 31.2357 };
+  const pending = [...myRequests.values()].find(r => r.gatheringId === g.id && r.status === 'pending');
   return {
-    id: s.id,
-    proposer: p,
-    status: s.status,
-    message: s.message,
-    meetingLocation: {
-      latitude: 30.0444 + s.distanceKm / 111,
-      longitude: 31.2357,
-      address: s.address,
+    id: g.id,
+    host: members[0],
+    status: closed.has(g.id) ? 'ended' : members.length > 1 ? 'gathered' : 'open',
+    startsAt: new Date(now + g.startsInMins * 60_000).toISOString(),
+    endsAt: new Date(now + (g.startsInMins + g.hours * 60) * 60_000).toISOString(),
+    note: g.note,
+    venueName: g.mine ? g.venueName : undefined,
+    location: g.mine ? point : undefined,
+    approximateLocation: {
+      latitude: Math.round(point.latitude * 100) / 100,
+      longitude: Math.round(point.longitude * 100) / 100,
     },
-    distanceFromYouKm: s.distanceKm,
-    createdAt: minutesFromNow(-s.createdMinsAgo),
-    expiresAt: minutesFromNow(s.expiresInMins),
+    distanceKm: g.distanceKm,
+    members,
+    memberCount: members.length,
+    isMember: !!g.mine,
+    isHost: !!g.mine,
+    myPendingRequestId: pending?.id,
+    createdAt: new Date(now - 20 * 60_000).toISOString(),
   };
 };
-
-// Ids the user has accepted/declined/cancelled this session
-const resolved = new Set<string>();
 
 export const mockApi = {
   nearbyUsers(radiusKm: number, hasBoard?: boolean): NearbyUser[] {
@@ -262,25 +234,101 @@ export const mockApi = {
     return p && profileOf(p);
   },
 
-  incoming(): Proposal[] {
-    return INCOMING.filter(s => !resolved.has(s.id)).map(build);
+  nearbyGatherings(radiusKm: number): Gathering[] {
+    return GATHERINGS.filter(g => !g.mine && !closed.has(g.id) && g.distanceKm <= radiusKm).map(
+      buildGathering,
+    );
   },
 
-  outgoing(): Proposal[] {
-    return OUTGOING.filter(s => !resolved.has(s.id)).map(build);
+  myGatherings(): Gathering[] {
+    return GATHERINGS.filter(g => g.mine).map(buildGathering);
   },
 
-  resolve(proposalId: string) {
-    resolved.add(proposalId);
+  gathering(id: string): Gathering {
+    return buildGathering(GATHERINGS.find(g => g.id === id)!);
   },
 
-  accept(proposalId: string): AcceptProposalResponse {
-    resolved.add(proposalId);
+  join(gatheringId: string, message?: string): JoinRequest {
+    const now = Date.now();
+    const request: JoinRequest = {
+      id: `mock-mine-${now}`,
+      gatheringId,
+      requester: ME,
+      message,
+      status: 'pending',
+      createdAt: new Date(now).toISOString(),
+      expiresAt: new Date(now + 15 * 60_000).toISOString(),
+    };
+    myRequests.set(request.id, request);
+    return request;
+  },
+
+  withdraw(requestId: string) {
+    const request = myRequests.get(requestId);
+    if (request) request.status = 'withdrawn';
+  },
+
+  leave(gatheringId: string) {
+    closed.add(gatheringId);
+  },
+
+  end(gatheringId: string) {
+    closed.add(gatheringId);
+  },
+
+  requestsToApprove(): JoinRequest[] {
+    const now = Date.now();
+    return REQUESTS_TO_APPROVE.filter(r => !answered.has(r.id)).map(r => ({
+      id: r.id,
+      gatheringId: r.gatheringId,
+      requester: person(r.from),
+      message: r.message,
+      status: 'pending',
+      createdAt: new Date(now - 3 * 60_000).toISOString(),
+      expiresAt: new Date(now + 12 * 60_000).toISOString(),
+    }));
+  },
+
+  myRequests(): JoinRequest[] {
+    return [...myRequests.values()];
+  },
+
+  answer(requestId: string, status: JoinRequestStatus): JoinRequest {
+    const seed = REQUESTS_TO_APPROVE.find(r => r.id === requestId)!;
+    answered.set(requestId, status);
     return {
-      id: proposalId,
-      status: 'accepted',
-      respondedAt: new Date().toISOString(),
-      matchId: `mock-match-${proposalId}`,
+      id: requestId,
+      gatheringId: seed.gatheringId,
+      requester: person(seed.from),
+      status,
+      createdAt: new Date().toISOString(),
+      expiresAt: new Date().toISOString(),
+    };
+  },
+
+  reviewsFor(userId: string): ReviewListResponse {
+    if (userId !== 'mock-marcus') return { reviews: [], count: 0, tagCounts: [], noShowCount: 0 };
+    return {
+      reviews: [
+        {
+          id: 'mock-review-1',
+          gatheringId: 'mock-g-old',
+          reviewerId: 'mock-elena',
+          reviewerUsername: 'elena_r',
+          revieweeId: userId,
+          tags: ['friendly', 'good_company'],
+          noShow: false,
+          comment: 'Brought spare boards for everyone. Great evening.',
+          createdAt: minutesFromNow(-60 * 24 * 3),
+        },
+      ],
+      count: 1,
+      tagCounts: [
+        { tag: 'friendly', count: 6 },
+        { tag: 'good_company', count: 4 },
+        { tag: 'on_time', count: 3 },
+      ],
+      noShowCount: 0,
     };
   },
 };

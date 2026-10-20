@@ -2,7 +2,6 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import Card from './Card';
-import Button from './Button';
 import { Avatar, RatingBadge } from './Avatar';
 import { Tag, IconButton } from './UI';
 import { colors, spacing, typography } from '@/theme';
@@ -13,17 +12,13 @@ import { ratingUtils } from '@/utils';
 export default function UserCard({
   user,
   onPress,
-  onChallenge,
   accent = colors.primary,
 }: {
   user: NearbyUser;
   onPress?: () => void;
-  onChallenge?: () => void;
   accent?: string;
 }) {
   const rating = ratingUtils.best(user);
-  const stats = user.stats;
-  const games = stats?.totalMatchesPlayed ?? 0;
 
   return (
     <Card style={styles.card} padded={false}>
@@ -40,11 +35,7 @@ export default function UserCard({
             <Text style={styles.name} numberOfLines={1}>
               {user.fullName || user.username}
             </Text>
-            {games > 0 && stats ? (
-              <Tag label={`${stats.winRate}% win`} color={accent} />
-            ) : (
-              <Tag label="New" color={accent} />
-            )}
+            {!rating && <Tag label="Unrated" color={accent} />}
           </View>
           {rating && (
             <View style={styles.ratingRow}>
@@ -67,28 +58,24 @@ export default function UserCard({
           <Tag label="Has board" icon="checkerboard" color={colors.primary} filled={accent === colors.primary} style={styles.tag} />
         )}
         {user.fideRating ? <Tag label="FIDE rated" icon="trophy-outline" style={styles.tag} /> : null}
-        {games > 0 && <Tag label={`${games} OTB games`} icon="chart-line" style={styles.tag} />}
+        {user.linkedAccounts?.map(account => (
+          <Tag
+            key={account.platform}
+            label={account.platform === 'lichess' ? 'Lichess' : 'Chess.com'}
+            icon={account.verified ? 'check-decagram' : 'link-variant'}
+            style={styles.tag}
+          />
+        ))}
       </View>
 
-      <View style={styles.footer}>
-        <View style={styles.footerInfo}>
-          <Text style={styles.footerLabel}>OTB record</Text>
-          <Text style={[styles.footerValue, { color: games > 0 ? colors.textPrimary : accent }]}>
-            {games > 0 && stats
-              ? `${stats.totalWins}W · ${stats.totalLosses}L · ${stats.totalDraws}D`
-              : 'Fresh challenger'}
+      {user.bio ? (
+        <View style={styles.footer}>
+          <Text style={styles.bio} numberOfLines={2}>
+            {user.bio}
           </Text>
+          <IconButton icon="account-outline" onPress={onPress ?? (() => {})} />
         </View>
-        <IconButton icon="account-outline" onPress={onPress ?? (() => {})} />
-        <Button
-          title="Challenge"
-          icon="sword-cross"
-          variant={accent === colors.primary ? 'primary' : 'secondary'}
-          fullWidth={false}
-          onPress={onChallenge ?? onPress ?? (() => {})}
-          style={styles.challenge}
-        />
-      </View>
+      ) : null}
     </Card>
   );
 }
@@ -163,21 +150,10 @@ const styles = StyleSheet.create({
     borderTopColor: colors.borderLight,
     padding: spacing.md,
   },
-  footerInfo: {
-    flex: 1,
-  },
-  footerLabel: {
+  bio: {
     ...typography.caption,
     color: colors.textSecondary,
-  },
-  footerValue: {
-    ...typography.label,
-    fontSize: 13,
-    textTransform: 'none',
-    letterSpacing: 0,
-    marginTop: 2,
-  },
-  challenge: {
-    marginLeft: spacing.sm + 2,
+    flex: 1,
+    marginRight: spacing.sm,
   },
 });

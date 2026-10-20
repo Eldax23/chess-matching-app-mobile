@@ -27,7 +27,7 @@ export default function SettingsScreen({ navigation }: Props) {
     ]);
   };
 
-  const toProfile = (screen: 'EditProfile' | 'MatchHistory') =>
+  const toProfile = (screen: 'EditProfile') =>
     navigation.getParent()?.navigate('ProfileStack', { screen, initial: false });
 
   const sections: { title: string; icon: string; color: string; rows: Row[] }[] = [
@@ -44,11 +44,11 @@ export default function SettingsScreen({ navigation }: Props) {
           onPress: () => toProfile('EditProfile'),
         },
         {
-          icon: 'history',
+          icon: 'account-group-outline',
           color: colors.warning,
-          label: 'Match history',
-          sub: 'Every over-the-board duel you recorded',
-          onPress: () => toProfile('MatchHistory'),
+          label: 'My gatherings',
+          sub: "Meetups you're hosting or have joined",
+          onPress: () => navigation.getParent()?.navigate('GatheringsStack', { screen: 'GatheringsList' }),
         },
       ],
     },

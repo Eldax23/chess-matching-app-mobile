@@ -15,8 +15,13 @@ declare module 'react-native-maps' {
     longitudeDelta: number;
   }
 
+  export interface MapPressEvent {
+    nativeEvent: { coordinate: LatLng };
+  }
+
   export interface MapViewProps extends ViewProps {
     provider?: string;
+    onPress?: (event: MapPressEvent) => void;
     region?: Region;
     initialRegion?: Region;
     onRegionChangeComplete?: (region: Region) => void;
@@ -28,6 +33,8 @@ declare module 'react-native-maps' {
     title?: string;
     description?: string;
     pinColor?: string;
+    draggable?: boolean;
+    onDragEnd?: (event: MapPressEvent) => void;
     onPress?: () => void;
   }
 
