@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { apiClient } from '@services/api';
+import { apiClient, isSessionOver } from '@services/api';
 import { USE_MOCK_DATA, MOCK_USER } from '@/mocks';
 import {
   User,
@@ -125,12 +125,13 @@ export const useAuthStore = create<
       if (accessToken && refreshToken) {
         apiClient.setAuthToken(accessToken);
 
-        // Fetch user profile to verify token is still valid
+        // Fetch user profile to verify token is still valid; an expired access
+        // token is refreshed on the way, so read the token back afterwards
         const userProfile = await apiClient.getMyProfile();
 
         set({
           user: userProfile,
-          accessToken,
+          accessToken: (await AsyncStorage.getItem('accessToken')) ?? accessToken,
           refreshToken,
           isLoading: false,
         });
@@ -138,9 +139,12 @@ export const useAuthStore = create<
         set({ isLoading: false });
       }
     } catch (error) {
-      // Token is invalid or expired, user needs to login
-      await AsyncStorage.removeItem('accessToken');
-      await AsyncStorage.removeItem('refreshToken');
+      // Keep the stored session if the backend just couldn't be reached, so the
+      // next launch can still restore it; drop it only once it's been rejected
+      if (isSessionOver(error)) {
+        await AsyncStorage.removeItem('accessToken');
+        await AsyncStorage.removeItem('refreshToken');
+      }
       apiClient.clearAuthToken();
 
       set({
@@ -167,3 +171,9 @@ export const useAuthStore = create<
     set({ user: MOCK_USER, accessToken: null, refreshToken: null, error: null, isLoading: false });
   },
 }));
+
+// A rejected refresh mid-session means signing in again
+apiClient.setOnSessionOver(() => {
+  apiClient.clearAuthToken();
+  useAuthStore.setState({ user: null, accessToken: null, refreshToken: null });
+});
