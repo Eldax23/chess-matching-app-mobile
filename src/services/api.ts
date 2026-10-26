@@ -32,6 +32,22 @@ export const isSessionOver = (error: any): boolean => {
   return status === 400 || status === 401 || status === 403;
 };
 
+// What to tell the user when a request fails: the server's own reason when it
+// gave one (the first field error for validation failures), otherwise whether
+// the server couldn't be reached at all
+export const errorMessage = (error: any, fallback: string): string => {
+  const data = error?.response?.data;
+  const firstField = data?.details?.[0]?.message;
+  if (firstField) return firstField;
+  if (data?.message) return data.message;
+  if (!error?.response) {
+    return error?.code === 'ECONNABORTED'
+      ? 'The server took too long to answer. Please try again.'
+      : "Couldn't reach the server. Check your connection and try again.";
+  }
+  return fallback;
+};
+
 class ApiClient {
   private instance: AxiosInstance;
   private baseURL: string;
