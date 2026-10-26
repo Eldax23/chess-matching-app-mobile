@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { apiClient, isSessionOver } from '@services/api';
+import { apiClient, errorMessage, isSessionOver } from '@services/api';
 import { USE_MOCK_DATA, MOCK_USER } from '@/mocks';
 import {
   User,
@@ -50,7 +50,7 @@ export const useAuthStore = create<
         isLoading: false,
       });
     } catch (error: any) {
-      const message = error.response?.data?.message || 'Registration failed';
+      const message = errorMessage(error, 'Registration failed');
       set({ error: message, isLoading: false });
       throw error;
     }
@@ -79,7 +79,7 @@ export const useAuthStore = create<
         isLoading: false,
       });
     } catch (error: any) {
-      const message = error.response?.data?.message || 'Login failed';
+      const message = errorMessage(error, 'Login failed');
       set({ error: message, isLoading: false });
       throw error;
     }
