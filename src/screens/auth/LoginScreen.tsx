@@ -32,6 +32,14 @@ export default function LoginScreen({ navigation }: Props) {
     }, [clearError]),
   );
 
+  // Which button the shared isLoading belongs to, so only that one spins
+  const [viaLichess, setViaLichess] = useState(false);
+  const handleLichess = async () => {
+    setViaLichess(true);
+    await loginWithLichess();
+    setViaLichess(false);
+  };
+
   const handleLogin = async () => {
     const errors: typeof fieldErrors = {};
     if (!validationUtils.isValidEmail(email)) errors.email = 'Enter a valid email';
@@ -91,14 +99,16 @@ export default function LoginScreen({ navigation }: Props) {
 
           {error && <Text style={styles.formError}>{error}</Text>}
 
-          <Button title="Sign In" onPress={handleLogin} loading={isLoading} />
+          <Button title="Sign In" onPress={handleLogin} loading={isLoading && !viaLichess}
+            disabled={isLoading} />
 
           <Text style={styles.or}>or</Text>
           <Button
             title="Continue with Lichess"
             variant="outline"
             icon="chess-knight"
-            onPress={loginWithLichess}
+            onPress={handleLichess}
+            loading={isLoading && viaLichess}
             disabled={isLoading}
           />
 
