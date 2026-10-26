@@ -124,6 +124,11 @@ export default function RegisterScreen({ navigation }: Props) {
             onChangeText={setField('password')}
             error={fieldErrors.password}
             isPassword
+            // Without these iOS guesses at the form and can cover the keyboard
+            // with its strong-password panel
+            textContentType="newPassword"
+            autoComplete="new-password"
+            passwordRules="minlength: 8;"
           />
           <Input
             label="Confirm password"
@@ -133,6 +138,9 @@ export default function RegisterScreen({ navigation }: Props) {
             onChangeText={setField('confirmPassword')}
             error={fieldErrors.confirmPassword}
             isPassword
+            textContentType="newPassword"
+            autoComplete="new-password"
+            passwordRules="minlength: 8;"
           />
 
           {error && <Text style={styles.formError}>{error}</Text>}

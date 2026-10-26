@@ -86,6 +86,7 @@ export default function LoginScreen({ navigation }: Props) {
             error={fieldErrors.password}
             isPassword
             autoComplete="password"
+            textContentType="password"
           />
 
           {error && <Text style={styles.formError}>{error}</Text>}
