@@ -29,7 +29,7 @@ export default function LoginScreen({ navigation }: Props) {
   useFocusEffect(
     useCallback(() => {
       clearError();
-    }, [clearError]),
+    }, [clearError])
   );
 
   // Which button the shared isLoading belongs to, so only that one spins
@@ -58,10 +58,9 @@ export default function LoginScreen({ navigation }: Props) {
   return (
     <KeyboardAvoidingView
       style={styles.flex}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <ScrollView
-        contentContainerStyle={styles.container}
-        keyboardShouldPersistTaps="handled">
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+    >
+      <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
         <View style={styles.header}>
           <BrandMark />
           <Text style={styles.title}>Welcome back</Text>
@@ -99,8 +98,12 @@ export default function LoginScreen({ navigation }: Props) {
 
           {error && <Text style={styles.formError}>{error}</Text>}
 
-          <Button title="Sign In" onPress={handleLogin} loading={isLoading && !viaLichess}
-            disabled={isLoading} />
+          <Button
+            title="Sign In"
+            onPress={handleLogin}
+            loading={isLoading && !viaLichess}
+            disabled={isLoading}
+          />
 
           <Text style={styles.or}>or</Text>
           <Button

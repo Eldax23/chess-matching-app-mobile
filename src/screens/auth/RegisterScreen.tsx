@@ -33,7 +33,7 @@ export default function RegisterScreen({ navigation }: Props) {
   useFocusEffect(
     useCallback(() => {
       clearError();
-    }, [clearError]),
+    }, [clearError])
   );
   const [form, setForm] = useState<FormState>({
     email: '',
@@ -60,12 +60,9 @@ export default function RegisterScreen({ navigation }: Props) {
   const handleRegister = async () => {
     const errors: typeof fieldErrors = {};
     if (!validationUtils.isValidEmail(form.email)) errors.email = 'Enter a valid email';
-    if (!validationUtils.isValidUsername(form.username))
-      errors.username = '3-20 characters';
-    if (!validationUtils.isValidPassword(form.password))
-      errors.password = 'At least 8 characters';
-    if (form.password !== form.confirmPassword)
-      errors.confirmPassword = 'Passwords do not match';
+    if (!validationUtils.isValidUsername(form.username)) errors.username = '3-20 characters';
+    if (!validationUtils.isValidPassword(form.password)) errors.password = 'At least 8 characters';
+    if (form.password !== form.confirmPassword) errors.confirmPassword = 'Passwords do not match';
 
     setFieldErrors(errors);
     if (Object.keys(errors).length > 0) return;
@@ -86,10 +83,9 @@ export default function RegisterScreen({ navigation }: Props) {
   return (
     <KeyboardAvoidingView
       style={styles.flex}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <ScrollView
-        contentContainerStyle={styles.container}
-        keyboardShouldPersistTaps="handled">
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+    >
+      <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
         <View style={styles.header}>
           <BrandMark />
           <Text style={styles.title}>Create account</Text>
@@ -153,8 +149,12 @@ export default function RegisterScreen({ navigation }: Props) {
 
           {error && <Text style={styles.formError}>{error}</Text>}
 
-          <Button title="Create Account" onPress={handleRegister} loading={isLoading && !viaLichess}
-            disabled={isLoading} />
+          <Button
+            title="Create Account"
+            onPress={handleRegister}
+            loading={isLoading && !viaLichess}
+            disabled={isLoading}
+          />
 
           <Text style={styles.or}>or</Text>
           <Button
