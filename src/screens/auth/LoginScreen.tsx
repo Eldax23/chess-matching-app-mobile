@@ -20,7 +20,7 @@ import { USE_MOCK_DATA } from '@/mocks';
 type Props = NativeStackScreenProps<AuthStackParamList, 'Login'>;
 
 export default function LoginScreen({ navigation }: Props) {
-  const { login, signInWithDemo, isLoading, error, clearError } = useAuthStore();
+  const { login, loginWithLichess, signInWithDemo, isLoading, error, clearError } = useAuthStore();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fieldErrors, setFieldErrors] = useState<{ email?: string; password?: string }>({});
@@ -93,6 +93,15 @@ export default function LoginScreen({ navigation }: Props) {
 
           <Button title="Sign In" onPress={handleLogin} loading={isLoading} />
 
+          <Text style={styles.or}>or</Text>
+          <Button
+            title="Continue with Lichess"
+            variant="outline"
+            icon="chess-knight"
+            onPress={loginWithLichess}
+            disabled={isLoading}
+          />
+
           {USE_MOCK_DATA && (
             <Button
               title="Try with demo data"
@@ -137,6 +146,12 @@ const styles = StyleSheet.create({
   },
   form: {
     width: '100%',
+  },
+  or: {
+    ...typography.caption,
+    color: colors.textSecondary,
+    textAlign: 'center',
+    marginVertical: spacing.md,
   },
   formError: {
     ...typography.caption,

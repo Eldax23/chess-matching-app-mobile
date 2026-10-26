@@ -139,6 +139,16 @@ class ApiClient {
     return response.data;
   }
 
+  async startLichessSignIn(): Promise<LichessAuthorizeResponse> {
+    const response = await this.instance.post('/api/v1/auth/lichess/start', {});
+    return response.data;
+  }
+
+  async completeLichessSignIn(code: string, state: string): Promise<AuthResponse> {
+    const response = await this.instance.post('/api/v1/auth/lichess/callback', { code, state });
+    return response.data;
+  }
+
   async refresh(refreshToken: string): Promise<AuthResponse> {
     const response = await this.instance.post('/api/v1/auth/refresh', {
       refreshToken,

@@ -1,5 +1,5 @@
 import { AppState, Linking } from 'react-native';
-import { LinkedAccount } from '@/types';
+import { AuthResponse, LichessAuthorizeResponse, LinkedAccount } from '@/types';
 import { apiClient } from './api';
 
 // Must match Lichess:RedirectUri on the backend and the AndroidManifest intent-filter
@@ -20,7 +20,20 @@ let abandonPending: (() => void) | null = null;
  * deep link back with ?code&state -> backend exchanges the code and stores the account.
  */
 export async function connectLichess(): Promise<LinkedAccount> {
-  const { authorizeUrl, state } = await apiClient.startLichessAuth();
+  const { code, state } = await authorizeWithLichess(await apiClient.startLichessAuth());
+  return apiClient.completeLichessAuth(code, state);
+}
+
+/**
+ * Signs in (or signs up) with Lichess, no BlitzMate password needed:
+ * same browser round trip, but the backend answers with our own tokens.
+ */
+export async function signInWithLichess(): Promise<AuthResponse> {
+  const { code, state } = await authorizeWithLichess(await apiClient.startLichessSignIn());
+  return apiClient.completeLichessSignIn(code, state);
+}
+
+async function authorizeWithLichess({ authorizeUrl, state }: LichessAuthorizeResponse) {
   const params = parseQuery(await openAndWaitForRedirect(authorizeUrl));
 
   if (params.error) {
@@ -29,7 +42,7 @@ export async function connectLichess(): Promise<LinkedAccount> {
   if (!params.code || params.state !== state) {
     throw new Error('Lichess sign-in failed. Please try again.');
   }
-  return apiClient.completeLichessAuth(params.code, state);
+  return { code: params.code, state };
 }
 
 function openAndWaitForRedirect(authorizeUrl: string): Promise<string> {

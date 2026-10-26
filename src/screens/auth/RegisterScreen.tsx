@@ -27,7 +27,7 @@ interface FormState {
 }
 
 export default function RegisterScreen({ navigation }: Props) {
-  const { register, isLoading, error, clearError } = useAuthStore();
+  const { register, loginWithLichess, isLoading, error, clearError } = useAuthStore();
 
   // Errors from another auth screen shouldn't follow you here
   useFocusEffect(
@@ -147,6 +147,15 @@ export default function RegisterScreen({ navigation }: Props) {
 
           <Button title="Create Account" onPress={handleRegister} loading={isLoading} />
 
+          <Text style={styles.or}>or</Text>
+          <Button
+            title="Continue with Lichess"
+            variant="outline"
+            icon="chess-knight"
+            onPress={loginWithLichess}
+            disabled={isLoading}
+          />
+
           <TouchableOpacity style={styles.footer} onPress={() => navigation.navigate('Login')}>
             <Text style={styles.footerText}>
               Already have an account? <Text style={styles.footerLink}>Sign in</Text>
@@ -181,6 +190,12 @@ const styles = StyleSheet.create({
   },
   form: {
     width: '100%',
+  },
+  or: {
+    ...typography.caption,
+    color: colors.textSecondary,
+    textAlign: 'center',
+    marginVertical: spacing.md,
   },
   formError: {
     ...typography.caption,
