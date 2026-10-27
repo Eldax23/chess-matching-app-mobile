@@ -27,13 +27,13 @@ interface FormState {
 }
 
 export default function RegisterScreen({ navigation }: Props) {
-  const { register, isLoading, error, clearError } = useAuthStore();
+  const { register, loginWithLichess, isLoading, error, clearError } = useAuthStore();
 
   // Errors from another auth screen shouldn't follow you here
   useFocusEffect(
     useCallback(() => {
       clearError();
-    }, [clearError]),
+    }, [clearError])
   );
   const [form, setForm] = useState<FormState>({
     email: '',
@@ -49,15 +49,20 @@ export default function RegisterScreen({ navigation }: Props) {
     setFieldErrors(prev => ({ ...prev, [key]: undefined }));
   };
 
+  // Which button the shared isLoading belongs to, so only that one spins
+  const [viaLichess, setViaLichess] = useState(false);
+  const handleLichess = async () => {
+    setViaLichess(true);
+    await loginWithLichess();
+    setViaLichess(false);
+  };
+
   const handleRegister = async () => {
     const errors: typeof fieldErrors = {};
     if (!validationUtils.isValidEmail(form.email)) errors.email = 'Enter a valid email';
-    if (!validationUtils.isValidUsername(form.username))
-      errors.username = '3-20 characters';
-    if (!validationUtils.isValidPassword(form.password))
-      errors.password = 'At least 8 characters';
-    if (form.password !== form.confirmPassword)
-      errors.confirmPassword = 'Passwords do not match';
+    if (!validationUtils.isValidUsername(form.username)) errors.username = '3-20 characters';
+    if (!validationUtils.isValidPassword(form.password)) errors.password = 'At least 8 characters';
+    if (form.password !== form.confirmPassword) errors.confirmPassword = 'Passwords do not match';
 
     setFieldErrors(errors);
     if (Object.keys(errors).length > 0) return;
@@ -78,10 +83,9 @@ export default function RegisterScreen({ navigation }: Props) {
   return (
     <KeyboardAvoidingView
       style={styles.flex}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <ScrollView
-        contentContainerStyle={styles.container}
-        keyboardShouldPersistTaps="handled">
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+    >
+      <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
         <View style={styles.header}>
           <BrandMark />
           <Text style={styles.title}>Create account</Text>
@@ -124,6 +128,11 @@ export default function RegisterScreen({ navigation }: Props) {
             onChangeText={setField('password')}
             error={fieldErrors.password}
             isPassword
+            // Without these iOS guesses at the form and can cover the keyboard
+            // with its strong-password panel
+            textContentType="newPassword"
+            autoComplete="new-password"
+            passwordRules="minlength: 8;"
           />
           <Input
             label="Confirm password"
@@ -133,11 +142,29 @@ export default function RegisterScreen({ navigation }: Props) {
             onChangeText={setField('confirmPassword')}
             error={fieldErrors.confirmPassword}
             isPassword
+            textContentType="newPassword"
+            autoComplete="new-password"
+            passwordRules="minlength: 8;"
           />
 
           {error && <Text style={styles.formError}>{error}</Text>}
 
-          <Button title="Create Account" onPress={handleRegister} loading={isLoading} />
+          <Button
+            title="Create Account"
+            onPress={handleRegister}
+            loading={isLoading && !viaLichess}
+            disabled={isLoading}
+          />
+
+          <Text style={styles.or}>or</Text>
+          <Button
+            title="Continue with Lichess"
+            variant="outline"
+            icon="chess-knight"
+            onPress={handleLichess}
+            loading={isLoading && viaLichess}
+            disabled={isLoading}
+          />
 
           <TouchableOpacity style={styles.footer} onPress={() => navigation.navigate('Login')}>
             <Text style={styles.footerText}>
@@ -173,6 +200,12 @@ const styles = StyleSheet.create({
   },
   form: {
     width: '100%',
+  },
+  or: {
+    ...typography.caption,
+    color: colors.textSecondary,
+    textAlign: 'center',
+    marginVertical: spacing.md,
   },
   formError: {
     ...typography.caption,

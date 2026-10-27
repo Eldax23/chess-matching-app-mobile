@@ -20,7 +20,7 @@ import { USE_MOCK_DATA } from '@/mocks';
 type Props = NativeStackScreenProps<AuthStackParamList, 'Login'>;
 
 export default function LoginScreen({ navigation }: Props) {
-  const { login, signInWithDemo, isLoading, error, clearError } = useAuthStore();
+  const { login, loginWithLichess, signInWithDemo, isLoading, error, clearError } = useAuthStore();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fieldErrors, setFieldErrors] = useState<{ email?: string; password?: string }>({});
@@ -29,8 +29,16 @@ export default function LoginScreen({ navigation }: Props) {
   useFocusEffect(
     useCallback(() => {
       clearError();
-    }, [clearError]),
+    }, [clearError])
   );
+
+  // Which button the shared isLoading belongs to, so only that one spins
+  const [viaLichess, setViaLichess] = useState(false);
+  const handleLichess = async () => {
+    setViaLichess(true);
+    await loginWithLichess();
+    setViaLichess(false);
+  };
 
   const handleLogin = async () => {
     const errors: typeof fieldErrors = {};
@@ -50,10 +58,9 @@ export default function LoginScreen({ navigation }: Props) {
   return (
     <KeyboardAvoidingView
       style={styles.flex}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <ScrollView
-        contentContainerStyle={styles.container}
-        keyboardShouldPersistTaps="handled">
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+    >
+      <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
         <View style={styles.header}>
           <BrandMark />
           <Text style={styles.title}>Welcome back</Text>
@@ -86,11 +93,27 @@ export default function LoginScreen({ navigation }: Props) {
             error={fieldErrors.password}
             isPassword
             autoComplete="password"
+            textContentType="password"
           />
 
           {error && <Text style={styles.formError}>{error}</Text>}
 
-          <Button title="Sign In" onPress={handleLogin} loading={isLoading} />
+          <Button
+            title="Sign In"
+            onPress={handleLogin}
+            loading={isLoading && !viaLichess}
+            disabled={isLoading}
+          />
+
+          <Text style={styles.or}>or</Text>
+          <Button
+            title="Continue with Lichess"
+            variant="outline"
+            icon="chess-knight"
+            onPress={handleLichess}
+            loading={isLoading && viaLichess}
+            disabled={isLoading}
+          />
 
           {USE_MOCK_DATA && (
             <Button
@@ -136,6 +159,12 @@ const styles = StyleSheet.create({
   },
   form: {
     width: '100%',
+  },
+  or: {
+    ...typography.caption,
+    color: colors.textSecondary,
+    textAlign: 'center',
+    marginVertical: spacing.md,
   },
   formError: {
     ...typography.caption,
