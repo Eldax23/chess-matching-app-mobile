@@ -1,6 +1,15 @@
 import Geolocation from '@react-native-community/geolocation';
 import { Location } from '@/types';
 
+// Android defaults to the raw LocationManager, where high accuracy means GPS
+// only — indoors that rarely gets a fix before the timeout. The fused provider
+// blends GPS, Wi-Fi and cell and falls back to the stock manager when Play
+// Services is missing.
+Geolocation.setRNConfiguration({
+  skipPermissionRequests: false,
+  locationProvider: 'playServices',
+});
+
 // Request permissions (iOS specific)
 export const requestLocationPermission = async (): Promise<boolean> => {
   try {
@@ -22,28 +31,48 @@ export const requestLocationPermission = async (): Promise<boolean> => {
   }
 };
 
-// Get current location
-export const getCurrentLocation = (): Promise<Location> => {
-  return new Promise((resolve, reject) => {
+const requestPosition = (options: {
+  enableHighAccuracy: boolean;
+  timeout: number;
+  maximumAge: number;
+}): Promise<Location> =>
+  new Promise((resolve, reject) => {
     Geolocation.getCurrentPosition(
       position => {
         const { latitude, longitude } = position.coords;
-        resolve({
-          latitude,
-          longitude,
-        });
+        resolve({ latitude, longitude });
       },
-      error => {
-        console.error('Error getting location:', error);
-        reject(error);
-      },
-      {
-        enableHighAccuracy: true,
-        timeout: 10000,
-        maximumAge: 0,
-      }
+      reject,
+      options
     );
   });
+
+// Get current location: try a precise fix first, then settle for a coarse
+// (network-based or recently cached) one rather than failing outright.
+export const getCurrentLocation = async (): Promise<Location> => {
+  try {
+    return await requestPosition({
+      enableHighAccuracy: true,
+      timeout: 8000,
+      maximumAge: 10000,
+    });
+  } catch (error: any) {
+    // PERMISSION_DENIED won't get better with a second try
+    if (error?.code === 1) {
+      console.error('Error getting location:', error);
+      throw error;
+    }
+    try {
+      return await requestPosition({
+        enableHighAccuracy: false,
+        timeout: 10000,
+        maximumAge: 5 * 60 * 1000,
+      });
+    } catch (fallbackError) {
+      console.error('Error getting location:', fallbackError);
+      throw fallbackError;
+    }
+  }
 };
 
 // Watch location updates
