@@ -13,7 +13,7 @@ export const requestLocationPermission = async (): Promise<boolean> => {
         () => {
           // Permission denied
           resolve(false);
-        },
+        }
       );
     });
   } catch (error) {
@@ -41,7 +41,7 @@ export const getCurrentLocation = (): Promise<Location> => {
         enableHighAccuracy: true,
         timeout: 10000,
         maximumAge: 0,
-      },
+      }
     );
   });
 };
@@ -49,7 +49,7 @@ export const getCurrentLocation = (): Promise<Location> => {
 // Watch location updates
 export const watchLocation = (
   callback: (location: Location) => void,
-  onError?: (error: any) => void,
+  onError?: (error: any) => void
 ): number => {
   return Geolocation.watchPosition(
     position => {
@@ -64,7 +64,7 @@ export const watchLocation = (
       enableHighAccuracy: true,
       timeout: 10000,
       maximumAge: 1000,
-    },
+    }
   );
 };
 
@@ -78,7 +78,7 @@ export const calculateDistance = (
   lat1: number,
   lon1: number,
   lat2: number,
-  lon2: number,
+  lon2: number
 ): number => {
   const R = 6371; // Earth's radius in km
   const dLat = ((lat2 - lat1) * Math.PI) / 180;
@@ -108,7 +108,7 @@ export const isWithinRadius = (
   userLon: number,
   pointLat: number,
   pointLon: number,
-  radiusKm: number,
+  radiusKm: number
 ): boolean => {
   const distance = calculateDistance(userLat, userLon, pointLat, pointLon);
   return distance <= radiusKm;
